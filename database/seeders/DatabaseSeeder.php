@@ -27,5 +27,7 @@ class DatabaseSeeder extends Seeder
                 'remember_token' => \Illuminate\Support\Str::random(10),
             ]
         );
+
+        
     }
 }

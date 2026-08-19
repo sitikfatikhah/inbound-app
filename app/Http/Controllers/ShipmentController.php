@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Contracts\ShipmentServiceInterface;
 use App\Http\Requests\ShipmentRequest;
-use App\Models\shipments;
-use Illuminate\Http\Request;
+use App\Models\Shipments;
+use Inertia\Inertia;
 
 class ShipmentController extends Controller
 {
@@ -14,23 +14,27 @@ class ShipmentController extends Controller
     ) {}
 
     /**
-     * Display a listing of the resource.
+     * Display a listing of shipments.
      */
     public function index()
     {
-        //
+        $shipments = Shipments::latest()->get();
+
+        return Inertia::render('shipment/index', [
+            'shipments' => $shipments,
+        ]);
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Show the form for creating a new shipment.
      */
     public function create()
     {
-        //
+        return Inertia::render('shipment/create');
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store a newly created shipment.
      */
     public function store(ShipmentRequest $request)
     {
@@ -38,47 +42,57 @@ class ShipmentController extends Controller
             $request->validated()
         );
 
-        return response()->json($shipment);
+        return redirect()
+            ->route('shipments.index')
+            ->with('success', 'Shipment created successfully.');
     }
 
     /**
-     * Display the specified resource.
+     * Display the specified shipment.
      */
-    public function show(string $id)
+    public function show(Shipments $shipment)
     {
-        //
+        return Inertia::render('shipment/show', [
+            'shipment' => $shipment,
+        ]);
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Show the form for editing the specified shipment.
      */
-    public function edit(string $id)
+    public function edit(Shipments $shipment)
     {
-        //
+        return Inertia::render('shipment/edit', [
+            'shipment' => $shipment,
+        ]);
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the specified shipment.
      */
-    public function update(ShipmentRequest $request, shipments $shipment)
-    {
-        $shipment = $this->shipmentService->update(
+    public function update(
+        ShipmentRequest $request,
+        Shipments $shipment
+    ) {
+        $this->shipmentService->update(
             $shipment,
             $request->validated()
         );
 
-        return response()->json($shipment);
+        return redirect()
+            ->route('shipments.index')
+            ->with('success', 'Shipment updated successfully.');
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified shipment.
      */
-    public function destroy(string $id)
+    public function destroy(Shipments $shipment)
     {
         $this->shipmentService->delete($shipment);
 
-        return response()->json([
-            'message' => 'Shipment deleted successfully.',
-        ]);
+        return redirect()
+            ->route('shipments.index')
+            ->with('success', 'Shipment deleted successfully.');
     }
 }

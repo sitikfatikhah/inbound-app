@@ -4,6 +4,7 @@ import { dashboard, login } from '@/routes';
 import { register } from '@/routes';
 import LandingLayout from '@/layouts/LandingLayout.vue';
 import Button from '@/components/ui/button/Button.vue';
+import Input from '@/components/Input.vue';
 </script>
 
 <template>
@@ -17,28 +18,10 @@ import Button from '@/components/ui/button/Button.vue';
                     Anda dari titik asal hingga tujuan akhir dengan mesin orkestrasi logistik canggih PT. CSA.</p>
                 <div
                     class="bg-surface shadow-xl rounded-xl p-3 flex flex-col md:flex-row gap-3 max-w-3xl mx-auto border border-border">
-                    <div class="relative flex-shrink-0">
-                        <select
-                            class="w-full md:w-48 bg-surface-container-low border-none rounded-lg font-medium text-on-surface-variant focus:ring-2 focus:ring-primary h-14 pl-4 pr-10 appearance-none">
-                            <option>Nomor BL</option>
-                            <option>Nomor PO</option>
-                            <option>Nomor Faktur</option>
-                            <option>Nomor Produk</option>
-                        </select>
-                        <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                            <span class="material-symbols-outlined text-outline">expand_more</span>
-                        </div>
-                    </div>
+                    
                     <div class="flex-grow relative">
-                        <input
-                            class="w-full h-14 bg-white border-none focus:ring-2 focus:ring-primary rounded-lg px-4 text-body-lg"
-                            placeholder="Masukkan nomor referensi (misal: CSA-99210-BL)" type="text">
-                    </div>
-                    <button
-                        class="bg-primary text-on-primary px-8 h-14 rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-opacity-90 transition-all shrink-0">
-                        <span class="material-symbols-outlined" data-icon="search">search</span>
-                        Lacak Pengiriman
-                    </button>
+                        <Input/>
+                    </div>                    
                 </div>
                 <div class="mt-8 flex justify-center gap-6 text-label-md text-muted">
                     <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-success"></span> 1.248

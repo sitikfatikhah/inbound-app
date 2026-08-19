@@ -19,8 +19,8 @@ return new class extends Migration
             $table->string('location_name')->nullable();
             $table->timestamp('event_time')->nullable();
             $table->enum('status', ['In Transit', 'Delivered', 'Pending'])->default('Pending');
-            $table->created_at('created_at')->useCurrent();
-            $table->updated_at('updated_at')->useCurrent()->useCurrentOnUpdate();
+            $table->dateTime('created_at')->useCurrent();
+            $table->dateTime('updated_at')->useCurrent()->useCurrentOnUpdate();
         });
     }
 

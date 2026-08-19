@@ -8,6 +8,7 @@ class CustomsClearances extends Model
 {
     protected $fillable = [
         'shipment_id',
+        'invoice_id',
         'pib_number',
         'pib_date',
         'nopen',

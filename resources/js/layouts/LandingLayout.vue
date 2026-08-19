@@ -40,9 +40,6 @@
             </nav>
         </header>
         <main class="flex-grow">
-            <Button variant="outline">
-                Button
-            </Button>
             <slot />
         </main>
         <footer class="bg-surface-container-lowest border-t border-border mt-12">
