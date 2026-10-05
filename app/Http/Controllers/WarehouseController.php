@@ -2,10 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\WarehouseReceipts;
 use App\Models\Warehouses;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 
 class WarehouseController extends Controller
@@ -15,10 +13,10 @@ class WarehouseController extends Controller
      */
     public function index()
     {
-        $warehouse = WarehouseReceipts::latest()->get();
+        $warehouses = Warehouses::latest()->get();
 
-        return Inertia::render('Warehouse/Index', [
-            'warehouse' => $warehouse,
+        return Inertia::render('warehouse/index', [
+            'warehouses' => $warehouses,
         ]);
     }
 
@@ -27,7 +25,7 @@ class WarehouseController extends Controller
      */
     public function create()
     {
-        return Inertia::render('Warehouse/Create');
+        return Inertia::render('warehouse/create');
     }
 
     /**
@@ -35,28 +33,27 @@ class WarehouseController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'shipment_id' => ['required', 'integer'],
-            'warehouse_id' => ['required', 'integer'],
-            'arrival_number' => ['nullable', 'string'],
-            'received_date' =>['nullable', 'date'],
-            'status' => ['nullable', 'enum'],
-        ]);
-
-        WarehouseReceipts::create('$validated');
+        Warehouses::create($request->validate([
+            'warehouse_code' => ['required', 'string', 'max:50', 'unique:warehouses,warehouse_code'],
+            'warehouse_name' => ['required', 'string', 'max:255'],
+            'address' => ['nullable', 'string'],
+            'contact_person' => ['nullable', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:50'],
+            'is_active' => ['nullable', 'boolean'],
+        ]));
 
         return redirect()
-            ->route('warehouse.index')
-            ->with('success', 'Warehouse Receipt created successfully.');
+            ->route('warehouses.index')
+            ->with('success', 'Warehouse created successfully.');
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Warehouses $warehouse)
     {
-        $warehouse = WarehouseReceipts::findOrFail($id);
-        return Inertia::render('Warehouse/Show',[
+        return Inertia::render('warehouse/show', [
             'warehouse' => $warehouse,
         ]);
     }
@@ -64,11 +61,9 @@ class WarehouseController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(Warehouses $warehouse)
     {
-        $warehouse = WarehouseReceipts::findOrFail($id);
-        
-        return Inertia::render('Warehouse/Edit',[
+        return Inertia::render('warehouse/edit', [
             'warehouse' => $warehouse,
         ]);
     }
@@ -76,40 +71,34 @@ class WarehouseController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, Warehouses $warehouse)
     {
-        $warehouse = WarehouseReceipts::findOrFail($id);
         $validated = $request->validate([
-            'company_id'    => ['required', 'integer'],
-            'po_number'     => ['required', 'string', 'max:100'],
-            'supplier_id'   => ['required', 'integer'],
-            'po_date'       => ['required', 'date'],
-            'currency'      => ['required', 'string', 'max:10'],
-            'exchange_rate' => ['nullable', 'numeric'],
-            'incoterm'      => ['nullable', 'string', 'max:20'],
-            'payment_term'  => ['nullable', 'string', 'max:100'],
-            'delivery_date' => ['nullable', 'date'],
-            'arrival_date'  => ['nullable', 'date'],
-            'status'        => ['required', 'string', 'max:50'],
+            'warehouse_code' => ['required', 'string', 'max:50', 'unique:warehouses,warehouse_code,'.$warehouse->id],
+            'warehouse_name' => ['required', 'string', 'max:255'],
+            'address' => ['nullable', 'string'],
+            'contact_person' => ['nullable', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:50'],
+            'is_active' => ['nullable', 'boolean'],
         ]);
 
         $warehouse->update($validated);
 
         return redirect()
-            ->route('Warehouse.index')
+            ->route('warehouses.index')
             ->with('success', 'Warehouse updated successfully.');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Warehouses $warehouse)
     {
-        $warehouse = WarehouseReceipts::findOrFail($id);
         $warehouse->delete();
 
         return redirect()
-            ->route('warehouse.index')
+            ->route('warehouses.index')
             ->with('success', 'Warehouse deleted successfully.');
     }
 }

@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('shipping_lines', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('company_id')->constrained('companies')->onDelete('cascade');
             $table->string('shipping_line_name');
             $table->string('contact_person')->nullable();
             $table->string('email')->nullable();

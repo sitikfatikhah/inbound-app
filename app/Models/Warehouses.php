@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 class Warehouses extends Model
 {
     protected $fillable = [
-        'company_id',
         'warehouse_code',
         'warehouse_name',
         'country',
@@ -16,5 +15,9 @@ class Warehouses extends Model
         'email',
         'phone',
         'is_active',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
     ];
 }

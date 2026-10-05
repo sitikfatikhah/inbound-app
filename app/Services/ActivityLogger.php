@@ -24,10 +24,6 @@ class ActivityLogger implements ActivityLoggerInterface
         $request = request();
 
         ActivityLog::create([
-
-            // Company
-            'company_id' => Auth::user()?->company_id,
-
             // User
             'user_id' => Auth::id(),
 

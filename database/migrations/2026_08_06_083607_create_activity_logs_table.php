@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('activity_logs', function (Blueprint $table) {
             $table->id();
-            $table->string('company_id');
             $table->string('user_id');
             $table->string('module');
             $table->string('model_type');
@@ -32,7 +31,7 @@ return new class extends Migration
             $table->string('status')->nullable();
             $table->timestamps();
         });
-        
+
     }
 
     /**

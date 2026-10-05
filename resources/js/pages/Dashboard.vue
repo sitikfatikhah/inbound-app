@@ -1,7 +1,27 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import PlaceholderPattern from '@/components/PlaceholderPattern.vue';
 import { dashboard } from '@/routes';
+import Kpi from '@/components/kpi.vue';
+import InteractiveArea from '@/components/InteractiveArea.vue';
+import TableSection from '@/components/TableSection.vue';
+
+interface DashboardProps {
+    stats: Record<string, number>;
+    timeline: Array<{ label: string; date: string; target: number; actual: number }>;
+    statusBreakdown: Array<{ key: string; label: string; color: string; count: number }>;
+    exceptions: Array<{
+        id: number;
+        reference: string;
+        detail: string;
+        product: string;
+        vendor: string;
+        status: string;
+        eta: string | null;
+        action: string;
+    }>;
+}
+
+defineProps<DashboardProps>();
 
 defineOptions({
     layout: {
@@ -17,30 +37,11 @@ defineOptions({
 
 <template>
     <Head title="Dashboard" />
-    <div
-        class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4"
-    >
-        <div class="grid auto-rows-min gap-4 md:grid-cols-3">
-            <div
-                class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
-            >
-                <PlaceholderPattern />
-            </div>
-            <div
-                class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
-            >
-                <PlaceholderPattern />
-            </div>
-            <div
-                class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
-            >
-                <PlaceholderPattern />
-            </div>
-        </div>
-        <div
-            class="relative min-h-[100vh] flex-1 rounded-xl border border-sidebar-border/70 md:min-h-min dark:border-sidebar-border"
-        >
-            <PlaceholderPattern />
+    <div class="min-h-full flex-1 overflow-x-auto bg-slate-50 p-4 sm:p-6 lg:p-8">
+        <div class="mx-auto flex max-w-[1680px] flex-col gap-8">
+            <Kpi :stats="stats" />
+            <InteractiveArea :timeline="timeline" :status-breakdown="statusBreakdown" />
+            <TableSection :exceptions="exceptions" />
         </div>
     </div>
 </template>

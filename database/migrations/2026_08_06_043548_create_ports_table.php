@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('ports', function (Blueprint $table) {
             $table->id();
-            $table->string('country');
-            $table->string('port_code')->unique();
             $table->string('port_name');
+            $table->string('country');
+            $table->string('port_code')->unique()->nullable();
             $table->string('city')->nullable();
             $table->string('type')->nullable();
             $table->boolean('is_active')->default(true);

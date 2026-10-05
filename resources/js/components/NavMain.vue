@@ -13,11 +13,11 @@ import type { NavItem } from '@/types';
 defineProps<{
     items: NavItem[];
 }>();
-
 const { isCurrentUrl } = useCurrentUrl();
 </script>
 
 <template>
+    
     <SidebarGroup class="px-2 py-0">
         <SidebarGroupLabel>Platform</SidebarGroupLabel>
         <SidebarMenu>

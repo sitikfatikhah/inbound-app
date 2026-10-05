@@ -170,3 +170,37 @@
         @apply bg-background text-foreground;
     }
 }
+@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+    --csa-primary: #00355f;
+    --csa-primary-container: #0f4c81;
+    --csa-secondary: #005faf;
+    --csa-secondary-container: #2992fe;
+
+    --csa-background: #f8fafc;
+    --csa-surface: #ffffff;
+    --csa-surface-low: #f2f3ff;
+
+    --csa-text: #131b2e;
+    --csa-text-muted: #64748b;
+    --csa-text-variant: #42474f;
+
+    --csa-border: #e2e8f0;
+    --csa-border-variant: #c2c7d1;
+
+    --csa-success: #22c55e;
+    --csa-warning: #f59e0b;
+    --csa-info: #06b6d4;
+    --csa-danger: #ef4444;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: var(--csa-background);
+    color: var(--csa-text);
+}
+
+.font-display {
+    font-family: 'Hanken Grotesk', sans-serif;
+}

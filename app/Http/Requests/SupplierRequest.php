@@ -22,18 +22,17 @@ class SupplierRequest extends FormRequest
      */
     public function rules(): array
     {
+        $supplierId = $this->route('supplier')?->id ?? null;
+
         return [
-            'company_id' => ['required', 'integer'],
             'supplier_code' => ['required', 'string'],
-            'supplier_name' => ['required', 'string'],
-            'country' => ['nullable', 'string'],
+            'supplier_name' => ['required', 'string', 'max:255'],
+            'country' => ['nullable', 'string', 'max:100'],
             'address' => ['nullable', 'string'],
-            'contact_person' => ['nullable', 'string'],
-            'email' => ['nullable', 'string'],
-            'phone' => ['nullable', 'string'],
-            'incoterm_default' => ['nullable', 'string'],
-            'currency' => ['nullable', 'string'],
-            'is_active' => ['required', 'boolean'],
+            'contact_person' => ['nullable', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:50'],
+            'is_active' => ['nullable', 'boolean'],
         ];
     }
 }

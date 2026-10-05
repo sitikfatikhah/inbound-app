@@ -21,7 +21,7 @@ class ShipmentRequest extends FormRequest
      *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
-     public function rules(): array
+    public function rules(): array
     {
         return [
 
@@ -31,25 +31,23 @@ class ShipmentRequest extends FormRequest
                 'max:50',
             ],
 
-            'company_id' => [
-                'required',
-                'exists:companies,id',
-            ],
-
-            'supplier_id' => [
-                'required',
-                'exists:suppliers,id',
-            ],
-
-            'purchase_order_id' => [
+            'forwarder_id' => [
                 'nullable',
-                'exists:purchase_orders,id',
+                'integer',
+                'exists:forwarders,id',
             ],
 
             'shipping_line_id' => [
                 'nullable',
+                'integer',
                 'exists:shipping_lines,id',
             ],
+
+            'port_of_loading_id' => ['nullable', 'integer', 'exists:ports,id'],
+            'port_of_discharge_id' => ['nullable', 'integer', 'exists:ports,id'],
+            'warehouse_id' => ['nullable', 'integer', 'exists:warehouses,id'],
+
+            'bl_number' => ['nullable', 'string', 'max:255'],
 
             'vessel_name' => [
                 'nullable',
@@ -57,7 +55,7 @@ class ShipmentRequest extends FormRequest
                 'max:100',
             ],
 
-            'voyage_no' => [
+            'voyage_number' => [
                 'nullable',
                 'string',
                 'max:50',
@@ -73,10 +71,20 @@ class ShipmentRequest extends FormRequest
                 'date',
             ],
 
-            'status' => [
-                'required',
-                'in:Draft,Booking,On Sea,Arrival,Custom Clearance,Warehouse,Completed,Cancelled',
+            'atd' => ['nullable', 'date'],
+            'ata' => ['nullable', 'date'],
+
+            'status_document' => [
+                'nullable',
+                'string',
+                'max:255',
             ],
+
+            'tracking_status' => ['nullable', 'string', 'max:255'],
+
+            'location' => ['nullable', 'string', 'max:255'],
+            'country' => ['nullable', 'string', 'max:255'],
+            'remarks' => ['nullable', 'string'],
 
         ];
     }
@@ -86,8 +94,6 @@ class ShipmentRequest extends FormRequest
     {
         return [
             'shipment_number.required' => 'Shipment Number wajib diisi',
-            'suppier_id.required' => 'Supplier wajib dipilih',
-            'company_id.required' => 'Company wajib  dipilih',
             'eta.date' => 'ETA harus berupa tanggal',
         ];
     }
@@ -97,8 +103,7 @@ class ShipmentRequest extends FormRequest
     {
         return [
             'shipment_number' => 'Shipment Number',
-            'supplier_id' =>'Supplier',
-            'company_id' => 'Company',
+            'forwarder_id' => 'Forwarder',
             'eta' => 'ETA',
         ];
     }

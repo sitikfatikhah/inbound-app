@@ -1,296 +1,120 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { Link } from '@inertiajs/vue3'
-
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 
-import {
-    Table,
-    TableBody,
-    TableCaption,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table'
-
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-
+interface Related { id: number | string;[key: string]: string | number }
 interface Shipment {
     id: number | string
-
-    shipment_number?: string | null
-    shipment_date?: string | null
-
-    bl_number?: string | null
-    vessel_name?: string | null
-    voyage_number?: string | null
-
-    etd?: string | null
-    eta?: string | null
-
-    status?: string | null
-    tracking_status?: string | null
+    shipment_number: string | null
+    forwarder?: Related | null
+    shipping_line?: Related | null
+    port_of_loading?: Related | null
+    port_of_discharge?: Related | null
+    warehouse?: Related | null
+    bl_number: string | null
+    vessel_name: string | null
+    voyage_number: string | null
+    etd: string | null
+    eta: string | null
+    atd: string | null
+    ata: string | null
+    status_document: string | null
+    tracking_status: string | null
 }
-
-/*
-|--------------------------------------------------------------------------
-| Props dari Laravel Controller
-|--------------------------------------------------------------------------
-*/
-
-const props = defineProps<{
-    shipments?: Shipment[]
-}>()
-
-/*
-|--------------------------------------------------------------------------
-| Search
-|--------------------------------------------------------------------------
-*/
-
+const props = defineProps<{ shipments?: Shipment[] }>()
 const search = ref('')
-
-/*
-|--------------------------------------------------------------------------
-| Filtered Shipments
-|--------------------------------------------------------------------------
-*/
-
 const filteredShipments = computed(() => {
-    const shipments = props.shipments ?? []
     const keyword = search.value.trim().toLowerCase()
-
-    if (!keyword) {
-        return shipments
-    }
-
-    return shipments.filter((shipment) => {
-        return [
-            shipment.shipment_number,
-            shipment.bl_number,
-            shipment.vessel_name,
-            shipment.voyage_number,
-            shipment.status,
-            shipment.tracking_status,
-        ].some((value) =>
-            String(value ?? '')
-                .toLowerCase()
-                .includes(keyword)
-        )
-    })
+    if (!keyword) return props.shipments ?? []
+    return (props.shipments ?? []).filter((shipment) => [shipment.shipment_number, shipment.bl_number, shipment.vessel_name, shipment.voyage_number, shipment.forwarder?.forwarder_name, shipment.shipping_line?.shipping_line_name, shipment.status_document, shipment.tracking_status].some((value) => String(value ?? '').toLowerCase().includes(keyword)))
 })
-
-/*
-|--------------------------------------------------------------------------
-| Status
-|--------------------------------------------------------------------------
-*/
-
-function statusClass(status?: string | null) {
-    switch (status?.toLowerCase()) {
-        case 'success':
-        case 'completed':
-        case 'delivered':
-            return 'bg-green-100 text-green-700'
-
-        case 'processing':
-        case 'in_transit':
-        case 'in transit':
-            return 'bg-blue-100 text-blue-700'
-
-        case 'pending':
-            return 'bg-yellow-100 text-yellow-700'
-
-        case 'failed':
-        case 'cancelled':
-            return 'bg-red-100 text-red-700'
-
-        default:
-            return 'bg-gray-100 text-gray-700'
-    }
-}
+const dateLabel = (value: string | null) => value?.slice(0, 10) ?? '-'
+const label = (value: string | null) => value ? value.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()) : '-'
+const statusClass = (value: string | null) => { const status = value?.toLowerCase(); if (['completed', 'delivered', 'customs cleared'].includes(status ?? '')) return 'bg-green-100 text-green-700'; if (['in transit', 'booked'].includes(status ?? '')) return 'bg-blue-100 text-blue-700'; if (['cancelled'].includes(status ?? '')) return 'bg-red-100 text-red-700'; return 'bg-gray-100 text-gray-700' }
 </script>
+
 <template>
-    <div class="w-full space-y-6">
-
-        <!-- Header -->
-        <div class="flex items-center justify-between">
+    <div class="w-full space-y-6 p-4">
+        <div class="flex flex-wrap items-center justify-between gap-4">
             <div>
-                <h1 class="text-2xl font-semibold">
-                    Shipment
-                </h1>
-
-                <p class="text-sm text-muted-foreground">
-                    Manage and monitor shipment data.
-                </p>
-            </div>
-
-            <Button as-child>
-                <Link href="/shipment/create">
-                    Add Shipment
-                </Link>
+                <h1 class="text-2xl font-semibold">Shipments</h1>
+                <p class="text-sm text-muted-foreground">Manage shipments, milestones, and status history.</p>
+            </div><Button as-child>
+                <Link href="/shipments/create">Add Shipment</Link>
             </Button>
         </div>
-
-        <!-- Search -->
-        <div>
-            <Input
-                v-model="search"
-                type="search"
-                placeholder="Search shipment..."
-                class="max-w-sm"
-            />
-        </div>
-
-        <!-- Table -->
-        <div class="rounded-md border">
+        <Input v-model="search" type="search" placeholder="Search shipments..." class="max-w-sm" />
+        <div class="overflow-x-auto rounded-md border">
             <Table>
-                <TableCaption>
-                    A list of your shipments.
-                </TableCaption>
-
-                <!-- HEADER SELALU TAMPIL -->
+                <TableCaption>A list of your shipments.</TableCaption>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>No</TableHead>
                         <TableHead>Shipment Number</TableHead>
+                        <TableHead>Forwarder</TableHead>
+                        <TableHead>Shipping Line</TableHead>
+                        <TableHead>POL</TableHead>
+                        <TableHead>POD</TableHead>
+                        <TableHead>Warehouse</TableHead>
                         <TableHead>BL Number</TableHead>
                         <TableHead>Vessel</TableHead>
                         <TableHead>Voyage</TableHead>
                         <TableHead>ETD</TableHead>
                         <TableHead>ETA</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Tracking</TableHead>
-                        <TableHead>Action</TableHead>
+                        <TableHead>ATD</TableHead>
+                        <TableHead>ATA</TableHead>
+                        <TableHead>Status Document</TableHead>
+                        <TableHead>Tracking Status</TableHead>
+                        <TableHead>Actions</TableHead>
                     </TableRow>
                 </TableHeader>
-
                 <TableBody>
-
-                    <!-- ADA DATA -->
-                    <template v-if="filteredShipments.length > 0">
-
-                        <TableRow
-                            v-for="(shipment, index) in filteredShipments"
-                            :key="shipment.id"
-                        >
-                            <TableCell>
-                                {{ index + 1 }}
-                            </TableCell>
-
-                            <TableCell class="font-medium">
-                                {{ shipment.shipment_number || '-' }}
-                            </TableCell>
-
-                            <TableCell>
-                                {{ shipment.bl_number || '-' }}
-                            </TableCell>
-
-                            <TableCell>
-                                {{ shipment.vessel_name || '-' }}
-                            </TableCell>
-
-                            <TableCell>
-                                {{ shipment.voyage_number || '-' }}
-                            </TableCell>
-
-                            <TableCell>
-                                {{ shipment.etd || '-' }}
-                            </TableCell>
-
-                            <TableCell>
-                                {{ shipment.eta || '-' }}
-                            </TableCell>
-
-                            <TableCell>
-                                <span
-                                    class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium capitalize"
-                                    :class="statusClass(shipment.status)"
-                                >
-                                    {{ shipment.status || '-' }}
-                                </span>
-                            </TableCell>
-
-                            <TableCell>
-                                {{ shipment.tracking_status || '-' }}
-                            </TableCell>
-
+                    <template v-if="filteredShipments.length">
+                        <TableRow v-for="shipment in filteredShipments" :key="shipment.id">
+                            <TableCell class="font-medium">{{ shipment.shipment_number || '-' }}</TableCell>
+                            <TableCell>{{ shipment.forwarder?.forwarder_name || '-' }}</TableCell>
+                            <TableCell>{{ shipment.shipping_line?.shipping_line_name || '-' }}</TableCell>
+                            <TableCell>{{ shipment.port_of_loading?.port_name || '-' }}</TableCell>
+                            <TableCell>{{ shipment.port_of_discharge?.port_name || '-' }}</TableCell>
+                            <TableCell>{{ shipment.warehouse?.warehouse_name || '-' }}</TableCell>
+                            <TableCell>{{ shipment.bl_number || '-' }}</TableCell>
+                            <TableCell>{{ shipment.vessel_name || '-' }}</TableCell>
+                            <TableCell>{{ shipment.voyage_number || '-' }}</TableCell>
+                            <TableCell>{{ dateLabel(shipment.etd) }}</TableCell>
+                            <TableCell>{{ dateLabel(shipment.eta) }}</TableCell>
+                            <TableCell>{{ dateLabel(shipment.atd) }}</TableCell>
+                            <TableCell>{{ dateLabel(shipment.ata) }}</TableCell>
+                            <TableCell><span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium"
+                                    :class="statusClass(shipment.status_document)">{{ label(shipment.status_document)
+                                    }}</span></TableCell>
+                            <TableCell>{{ label(shipment.tracking_status) }}</TableCell>
                             <TableCell>
                                 <DropdownMenu>
-                                    <DropdownMenuTrigger as-child>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                        >
-                                            ⋮
-                                        </Button>
+                                    <DropdownMenuTrigger as-child><Button variant="ghost" size="icon">⋮</Button>
                                     </DropdownMenuTrigger>
-
                                     <DropdownMenuContent align="end">
-                                        <DropdownMenuLabel>
-                                            Actions
-                                        </DropdownMenuLabel>
-
+                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                         <DropdownMenuSeparator />
-
                                         <DropdownMenuItem as-child>
-                                            <Link
-                                                :href="`/shipment/${shipment.id}`"
-                                            >
-                                                View
-                                            </Link>
+                                            <Link :href="`/shipments/${shipment.id}`">View</Link>
                                         </DropdownMenuItem>
-
                                         <DropdownMenuItem as-child>
-                                            <Link
-                                                :href="`/shipment/${shipment.id}/edit`"
-                                            >
-                                                Edit
-                                            </Link>
+                                            <Link :href="`/shipments/${shipment.id}/edit`">Edit</Link>
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </TableCell>
                         </TableRow>
-
                     </template>
-
-                    <!-- DATA KOSONG -->
                     <TableRow v-else>
-                        <TableCell
-                            :colspan="10"
-                            class="h-32 text-center"
-                        >
-                            <div class="flex flex-col items-center justify-center gap-2">
-                                <p class="font-medium text-muted-foreground">
-                                    No shipment found.
-                                </p>
-
-                                <p class="text-sm text-muted-foreground">
-                                    There are currently no shipment records.
-                                </p>
-                            </div>
-                        </TableCell>
+                        <TableCell colspan="16" class="h-32 text-center">{{ search.trim() ? 'No shipments match your search criteria.' : 'No shipments found.' }}</TableCell>
                     </TableRow>
-
                 </TableBody>
             </Table>
         </div>
-
-        <!-- Result -->
-        <div class="text-sm text-muted-foreground">
-            Showing {{ filteredShipments.length }}
-            shipment(s).
-        </div>
-
+        <div class="text-sm text-muted-foreground">Showing {{ filteredShipments.length }} shipments.</div>
     </div>
 </template>

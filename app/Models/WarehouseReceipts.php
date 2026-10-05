@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class WarehouseReceipts extends Model
 {
@@ -13,4 +14,14 @@ class WarehouseReceipts extends Model
         'received_date',
         'status',
     ];
+
+    public function shipment(): BelongsTo
+    {
+        return $this->belongsTo(Shipments::class);
+    }
+
+    public function warehouse(): BelongsTo
+    {
+        return $this->belongsTo(Warehouses::class);
+    }
 }

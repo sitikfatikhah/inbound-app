@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 class ActivityLog extends Model
 {
     protected $fillable = [
-        'company_id',
         'user_id',
         'module',
         'model_type',
@@ -26,11 +25,11 @@ class ActivityLog extends Model
         'status',
     ];
 
-      protected $casts = [
+    protected $casts = [
 
-        'old_values'=>'array',
+        'old_values' => 'array',
 
-        'new_values'=>'array',
+        'new_values' => 'array',
     ];
 
     public function user()

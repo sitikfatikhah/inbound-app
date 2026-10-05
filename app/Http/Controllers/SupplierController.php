@@ -3,9 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Contracts\SupplierServiceInterface;
+use App\Http\Requests\SupplierRequest;
 use App\Models\Suppliers;
-use Illuminate\Auth\Events\Validated;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class SupplierController extends Controller
@@ -13,14 +12,16 @@ class SupplierController extends Controller
     public function __construct(
         protected SupplierServiceInterface $suppliers_service
     ) {}
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
         $supplier = Suppliers::latest()->get();
-        return Inertia::render('Supplier/Index',[
-            'suppliers' => $suppliers,
+
+        return Inertia::render('supplier/index', [
+            'supplier' => $supplier,
         ]);
     }
 
@@ -29,63 +30,68 @@ class SupplierController extends Controller
      */
     public function create()
     {
-        return Inertia::render('Supplier/Create');
+        return Inertia::render('supplier/create');
+
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store a newly created supplier.
      */
-    public function store(Request $request)
+    public function store(SupplierRequest $request)
     {
-        $supplier = $this->Supplier_service->create(
+
+        $this->suppliers_service->create(
             $request->validated()
         );
 
-        return response()->json($supplier);
+        return redirect()
+            ->route('suppliers.index')
+            ->with('success', 'Supplier created successfully.');
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Suppliers $supplier)
     {
-        $purchaseOrder = Suppliers::findOrFail($id);
-        return Inertia::render('Supplier/Show', [
-            'supplier' => $purchaseOrder,
+        return Inertia::render('supplier/show', [
+            'supplier' => $supplier,
         ]);
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(Suppliers $supplier)
     {
-        $supplier = Suppliers::findOrFail($id);
-        return Inertia::render('Supplier/Edit',[
+        return Inertia::render('supplier/edit', [
             'supplier' => $supplier,
         ]);
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the specified supplier.
      */
-    public function update(Request $request, string $id)
-    {
-        $supplier = $this->suppliers_service->update(
+    public function update(
+        SupplierRequest $request,
+        Suppliers $supplier
+    ) {
+        $this->suppliers_service->update(
             $supplier,
-            $request->validate()
+            $request->validated()
         );
-        return response()->json($supplier);
+
+        return redirect()
+            ->route('suppliers.index')
+            ->with('success', 'Supplier updated successfully.');
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified supplier.
      */
-    public function destroy(string $id)
+    public function destroy(Suppliers $supplier)
     {
-        $supplier = Suppliers::findOrFail($id);
-
-        $supplier->delete();
+        $this->suppliers_service->delete($supplier);
 
         return redirect()
             ->route('suppliers.index')

@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('suppliers', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('company_id')->constrained('companies')->onDelete('cascade');
             $table->string('supplier_code')->unique();
             $table->string('supplier_name');
             $table->string('country')->nullable();
@@ -21,8 +20,6 @@ return new class extends Migration
             $table->string('contact_person')->nullable();
             $table->string('email')->nullable();
             $table->string('phone')->nullable();
-            $table->string('incoterm_default')->nullable();
-            $table->string('currency')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
