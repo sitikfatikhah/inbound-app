@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PurchaseOrders extends Model
@@ -37,5 +38,16 @@ class PurchaseOrders extends Model
     public function items(): HasMany
     {
         return $this->hasMany(PurchaseOrderItems::class, 'purchase_order_id');
+    }
+
+    public function shipments(): BelongsToMany
+    {
+        return $this->belongsToMany(Shipments::class, 'shipment_purchase_orders', 'purchase_order_id', 'shipment_id')
+            ->withTimestamps();
+    }
+
+    public function localDeliveries(): HasMany
+    {
+        return $this->hasMany(LocalDelivery::class, 'purchase_order_id');
     }
 }

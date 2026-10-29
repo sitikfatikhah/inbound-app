@@ -11,12 +11,14 @@ class Shipments extends Model
 {
     protected $fillable = [
         'shipment_number',
+        'purchase_orders_id',
         'forwarder_id',
         'shipping_line_id',
         'port_of_loading_id',
         'port_of_discharge_id',
         'warehouse_id',
         'bl_number',
+        'invoice_number',
         'vessel_name',
         'voyage_number',
         'etd',
@@ -37,12 +39,12 @@ class Shipments extends Model
 
     public function forwarder(): BelongsTo
     {
-        return $this->belongsTo(Forwarders::class);
+        return $this->belongsTo(Forwarders::class, 'forwarder_id');
     }
 
     public function shippingLine(): BelongsTo
     {
-        return $this->belongsTo(ShippingLines::class);
+        return $this->belongsTo(ShippingLines::class, 'shipping_line_id');
     }
 
     public function portOfLoading(): BelongsTo
@@ -73,6 +75,12 @@ class Shipments extends Model
 
     public function purchaseOrders(): BelongsToMany
     {
-        return $this->belongsToMany(PurchaseOrders::class, 'shipment_purchase_orders', 'shipment_id', 'purchase_order_id');
+        return $this->belongsToMany(PurchaseOrders::class, 'shipment_purchase_orders', 'shipment_id', 'purchase_order_id')
+            ->withTimestamps();
+    }
+
+    public function shipmentContainers(): HasMany
+    {
+        return $this->hasMany(ShipmentContainers::class, 'shipment_id');
     }
 }

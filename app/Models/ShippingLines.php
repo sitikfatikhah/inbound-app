@@ -11,7 +11,7 @@ class ShippingLines extends Model
         'contact_person',
         'email',
         'phone',
-        'phone',
+        'website',
         'is_active',
     ];
 }

@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
-import { ChartNoAxesCombinedIcon } from 'lucide-vue-next';
+import { Box, ChartNoAxesCombinedIcon, CircleArrowLeft } from 'lucide-vue-next';
 
 const mainNavItems: NavItem[] = [
     {
@@ -57,6 +57,11 @@ const masterDataItems: NavItem[] = [
         href: '/suppliers',
         icon: Users,
     },
+    {
+        title: 'Tracking-status',
+        href: '/tracking-status',
+        icon: CircleArrowLeft,
+    },
 ];
 
 const transactionItems: NavItem[] = [
@@ -64,6 +69,11 @@ const transactionItems: NavItem[] = [
         title: 'Shipment',
         href: '/shipments',
         icon: Ship,
+    },
+    {
+        title: 'Local Shipments',
+        href: '/local-shipment',
+        icon: Box,
     },
     {
         title: 'PO',
@@ -92,7 +102,7 @@ const trackingItems: NavItem[] = [
         icon: PackageSearch,
     },
     {
-        title: 'Tracking Local',
+        title: 'Tracking Local PO',
         href: '/tracking/local',
         icon: Truck,
     },
@@ -133,6 +143,7 @@ const footerNavItems: NavItem[] = [
         icon: BookOpen,
     },
 ];
+
 </script>
 
 <template>
@@ -150,12 +161,12 @@ const footerNavItems: NavItem[] = [
         </SidebarHeader>
 
         <SidebarContent>
-            <NavMain :items="mainNavItems" />
-            <NavMain :items="masterDataItems" />
-            <NavMain :items="transactionItems" />
-            <NavMain :items="userManagementItems" />
-            <NavMain :items="trackingItems" />
-            <NavMain :items="monitoringItems" />
+            <NavMain :items="mainNavItems" title="Overview" />
+            <NavMain :items="trackingItems" title="Shipment Tracking" />
+            <NavMain :items="monitoringItems" title="Monitoring & Analytics" />
+            <NavMain :items="masterDataItems" title="Master Data" />
+            <NavMain :items="transactionItems" title="Transactions" />
+            <NavMain :items="userManagementItems" title="User Management" />
         </SidebarContent>
 
         <SidebarFooter>

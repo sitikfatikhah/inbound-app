@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { FolderKanban, Search, Users } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -8,7 +9,6 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { FolderKanban, Search, Users } from 'lucide-vue-next';
 
 interface Project {
     id: number;
@@ -18,8 +18,13 @@ interface Project {
     target_date: string | null;
     pic: string | null;
     progress: 'Not Started' | 'In Progress' | 'Completed';
-    product?: { product_name: string } | null;
-    shipment?: { shipment_number: string } | null;
+    quantity: number;
+    product?: { product_name: string | null; category: string | null } | null;
+    shipment?: {
+        id: number;
+        shipment_number: string;
+        tracking_status: string | null;
+    } | null;
 }
 const props = defineProps<{ projects?: Project[] }>();
 const search = ref('');
@@ -32,8 +37,9 @@ const filteredProjects = computed(() =>
             [
                 project.project_name,
                 project.product?.product_name,
-                project.pic,
+                project.product?.category,
                 project.progress,
+                project.shipment?.shipment_number,
             ].some((value) =>
                 String(value ?? '')
                     .toLowerCase()
@@ -97,8 +103,7 @@ function progressValue(value: Project['progress']) {
                         Monitoring Project Produk Baru
                     </h1>
                     <p class="mt-1 text-sm text-muted-foreground">
-                        Lacak kemajuan project, PIC, target, dan shipment
-                        terkait secara aktual.
+                        Pantau item kategori sample yang sudah dialokasikan ke shipment.
                     </p>
                 </div>
                 <div
@@ -184,10 +189,10 @@ function progressValue(value: Project['progress']) {
                 >
                     <div>
                         <h2 class="text-lg font-bold text-primary">
-                            Project Timeline
+                            Item Shipment Sample
                         </h2>
                         <p class="text-xs text-muted-foreground">
-                            Timeline diturunkan dari start_date dan target_date.
+                            Data produk dan kuantitas berasal dari alokasi item shipment.
                         </p>
                     </div>
                     <div class="relative">
@@ -205,11 +210,11 @@ function progressValue(value: Project['progress']) {
                         <div
                             class="grid grid-cols-[280px_1fr] border-b border-border bg-muted/30 text-xs font-bold text-muted-foreground"
                         >
-                            <div class="p-4">Tahapan & Milestone</div>
+                            <div class="p-4">Barang sample</div>
                             <div class="grid grid-cols-4">
                                 <div class="border-l p-4">START</div>
                                 <div class="border-l p-4">PROGRESS</div>
-                                <div class="border-l p-4">TARGET</div>
+                                <div class="border-l p-4">QTY</div>
                                 <div class="border-l p-4">SHIPMENT</div>
                             </div>
                         </div>
@@ -229,7 +234,7 @@ function progressValue(value: Project['progress']) {
                                     }}
                                 </p>
                                 <p class="mt-2 text-xs text-muted-foreground">
-                                    PIC: {{ project.pic || '-' }}
+                                    Kategori: {{ project.product?.category || 'sample' }}
                                 </p>
                             </div>
                             <div class="grid grid-cols-4 items-center">
@@ -257,7 +262,7 @@ function progressValue(value: Project['progress']) {
                                     </div>
                                 </div>
                                 <div class="border-l p-4 text-xs font-semibold">
-                                    {{ formatDate(project.target_date) }}
+                                    {{ project.quantity.toLocaleString('id-ID') }}
                                 </div>
                                 <div
                                     class="border-l p-4 text-xs text-muted-foreground"

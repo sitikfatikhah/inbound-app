@@ -3,16 +3,17 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Form, Link, useForm } from '@inertiajs/vue3';
+import { Link, useForm } from '@inertiajs/vue3';
 import { ArrowLeft } from 'lucide-vue-next';
+import { update as updateShippingLine } from '@/actions/App/Http/Controllers/ShippingLineController';
 
 interface ShippingLine {
     id: number;
     shipping_line_name: string;
-    contact_person: string;
-    email: string;
-    phone: string;
-    website: string;
+    contact_person: string | null;
+    email: string | null;
+    phone: string | null;
+    website: string | null;
     is_active: boolean;
 }
 const props = defineProps<{
@@ -21,20 +22,15 @@ const props = defineProps<{
 
 const form = useForm({
     shipping_line_name: props.shippingLine.shipping_line_name,
-    contact_person: props.shippingLine.contact_person,
-    email: props.shippingLine.email,
-    phone: props.shippingLine.phone,
-    website: props.shippingLine.website,
-    is_active: props.shippingLine.is_active as boolean,
+    contact_person: props.shippingLine.contact_person ?? '',
+    email: props.shippingLine.email ?? '',
+    phone: props.shippingLine.phone ?? '',
+    website: props.shippingLine.website ?? '',
+    is_active: Boolean(props.shippingLine.is_active),
 })
 const handleSubmit = () => {
-    form.put(`/shippingLine/${props.shippingLine.id}`, {
-        onSuccess: () => {
-            console.log('Shipping Line berhasil diperbarui');
-        },
-        onError: (errors) => {
-            console.log('Validation errors:', errors);
-        },
+    form.put(updateShippingLine.url(props.shippingLine.id), {
+        preserveScroll: true,
     });
 }
 </script>
@@ -57,7 +53,7 @@ const handleSubmit = () => {
                     </h1>
 
                     <p class="text-sm text-muted-foreground">
-                        View the details of this shipping line.
+                        Edit the details of this shipping line.
                     </p>
                 </div>
                 <Button as-child>
@@ -70,7 +66,7 @@ const handleSubmit = () => {
         </div>
 
         <!-- Form -->
-        <Form class="space-y-6">
+        <form @submit.prevent="handleSubmit" class="space-y-6">
 
             <!-- Shipping Line Information -->
             <div class="rounded-lg border bg-card">
@@ -90,36 +86,53 @@ const handleSubmit = () => {
                     <!-- country -->
                     <div class="space-y-2">
                         <label class="text-sm font-medium">Shipping Line Name</label>
-                        <Input v-model="props.shippingLine.shipping_line_name" placeholder="Enter shipping line name"
-                            readonly />
+                        <Input v-model="form.shipping_line_name" placeholder="Enter shipping line name" readonly />
+                        <p v-if="form.errors.shipping_line_name" class="text-sm text-destructive">
+                            {{ form.errors.shipping_line_name }}
+                        </p>
                     </div>
 
                     <!-- contact_person -->
                     <div class="space-y-2">
                         <label class="text-sm font-medium">Contact Person</label>
-                        <Input v-model="props.shippingLine.contact_person" placeholder="Enter contact person" />
+                        <Input v-model="form.contact_person" placeholder="Enter contact person" />
+                        <p v-if="form.errors.contact_person" class="text-sm text-destructive">
+                            {{ form.errors.contact_person }}
+                        </p>
                     </div>
 
                     <!-- email -->
                     <div class="space-y-2">
                         <label class="text-sm font-medium">Email</label>
-                        <Input v-model="props.shippingLine.email" placeholder="Enter email address" />
+                        <Input v-model="form.email" placeholder="Enter email address" />
+                        <p v-if="form.errors.email" class="text-sm text-destructive">
+                            {{ form.errors.email }}
+                        </p>
                     </div>
                     <!-- phone -->
                     <div class="space-y-2">
                         <label class="text-sm font-medium">Phone</label>
-                        <Input v-model="props.shippingLine.phone" placeholder="Enter phone number" />
+                        <Input v-model="form.phone" placeholder="Enter phone number" />
+                        <p v-if="form.errors.phone" class="text-sm text-destructive">
+                            {{ form.errors.phone }}
+                        </p>
                     </div>
                     <!-- website -->
                     <div class="space-y-2">
                         <label class="text-sm font-medium">Website</label>
-                        <Input v-model="props.shippingLine.website" placeholder="Enter website URL" />
+                        <Input v-model="form.website" placeholder="Enter website URL" />
+                        <p v-if="form.errors.website" class="text-sm text-destructive">
+                            {{ form.errors.website }}
+                        </p>
                     </div>
 
                     <!-- Status -->
                     <div class="space-y-2">
                         <Label class="text-sm font-medium" for="toggle">Is Active</Label>
-                        <Checkbox id="toggle" v-model="props.shippingLine.is_active" />
+                        <Checkbox id="toggle" v-model="form.is_active" />
+                        <p v-if="form.errors.is_active" class="text-sm text-destructive">
+                            {{ form.errors.is_active }}
+                        </p>
                     </div>
                 </div>
             </div>
@@ -133,7 +146,7 @@ const handleSubmit = () => {
                     {{ form.processing ? 'Saving...' : 'Save Shipping Line' }}
                 </Button>
             </div>
-        </Form>
+        </form>
     </div>
 </template>
 

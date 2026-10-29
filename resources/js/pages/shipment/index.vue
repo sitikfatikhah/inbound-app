@@ -7,15 +7,18 @@ import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, Tabl
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 
 interface Related { id: number | string;[key: string]: string | number }
+interface PurchaseOrder { id: number | string; po_number: string }
 interface Shipment {
     id: number | string
     shipment_number: string | null
     forwarder?: Related | null
+    purchase_orders?: PurchaseOrder[]
     shipping_line?: Related | null
     port_of_loading?: Related | null
     port_of_discharge?: Related | null
     warehouse?: Related | null
     bl_number: string | null
+    invoice_number: string | null
     vessel_name: string | null
     voyage_number: string | null
     etd: string | null
@@ -30,7 +33,7 @@ const search = ref('')
 const filteredShipments = computed(() => {
     const keyword = search.value.trim().toLowerCase()
     if (!keyword) return props.shipments ?? []
-    return (props.shipments ?? []).filter((shipment) => [shipment.shipment_number, shipment.bl_number, shipment.vessel_name, shipment.voyage_number, shipment.forwarder?.forwarder_name, shipment.shipping_line?.shipping_line_name, shipment.status_document, shipment.tracking_status].some((value) => String(value ?? '').toLowerCase().includes(keyword)))
+    return (props.shipments ?? []).filter((shipment) => [shipment.shipment_number, shipment.bl_number, shipment.vessel_name, shipment.voyage_number, shipment.forwarder?.forwarder_name, shipment.shipping_line?.shipping_line_name, shipment.status_document, shipment.tracking_status, ...(shipment.purchase_orders ?? []).map((purchaseOrder) => purchaseOrder.po_number)].some((value) => String(value ?? '').toLowerCase().includes(keyword)))
 })
 const dateLabel = (value: string | null) => value?.slice(0, 10) ?? '-'
 const label = (value: string | null) => value ? value.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()) : '-'
@@ -38,12 +41,13 @@ const statusClass = (value: string | null) => { const status = value?.toLowerCas
 </script>
 
 <template>
-    <div class="w-full space-y-6 p-4">
+    <div class="mx-auto w-full space-y-6 p-4 sm:p-8">
         <div class="flex flex-wrap items-center justify-between gap-4">
             <div>
                 <h1 class="text-2xl font-semibold">Shipments</h1>
                 <p class="text-sm text-muted-foreground">Manage shipments, milestones, and status history.</p>
-            </div><Button as-child>
+            </div>
+            <Button as-child>
                 <Link href="/shipments/create">Add Shipment</Link>
             </Button>
         </div>
@@ -53,13 +57,16 @@ const statusClass = (value: string | null) => { const status = value?.toLowerCas
                 <TableCaption>A list of your shipments.</TableCaption>
                 <TableHeader>
                     <TableRow>
+                        <TableHead class="w-[100px]">No</TableHead>
                         <TableHead>Shipment Number</TableHead>
+                        <TableHead>Purchase Orders</TableHead>
                         <TableHead>Forwarder</TableHead>
                         <TableHead>Shipping Line</TableHead>
                         <TableHead>POL</TableHead>
                         <TableHead>POD</TableHead>
                         <TableHead>Warehouse</TableHead>
                         <TableHead>BL Number</TableHead>
+                        <TableHead>Invoice Number</TableHead>
                         <TableHead>Vessel</TableHead>
                         <TableHead>Voyage</TableHead>
                         <TableHead>ETD</TableHead>
@@ -74,13 +81,16 @@ const statusClass = (value: string | null) => { const status = value?.toLowerCas
                 <TableBody>
                     <template v-if="filteredShipments.length">
                         <TableRow v-for="shipment in filteredShipments" :key="shipment.id">
+                            <TableCell class="font-medium" >{{ shipment.id }}</TableCell>
                             <TableCell class="font-medium">{{ shipment.shipment_number || '-' }}</TableCell>
+                            <TableCell>{{ (shipment.purchase_orders ?? []).map((purchaseOrder) => purchaseOrder.po_number).join(', ') || '-' }}</TableCell>
                             <TableCell>{{ shipment.forwarder?.forwarder_name || '-' }}</TableCell>
                             <TableCell>{{ shipment.shipping_line?.shipping_line_name || '-' }}</TableCell>
                             <TableCell>{{ shipment.port_of_loading?.port_name || '-' }}</TableCell>
                             <TableCell>{{ shipment.port_of_discharge?.port_name || '-' }}</TableCell>
                             <TableCell>{{ shipment.warehouse?.warehouse_name || '-' }}</TableCell>
                             <TableCell>{{ shipment.bl_number || '-' }}</TableCell>
+                            <TableCell>{{ shipment.invoice_number || '-' }}</TableCell>
                             <TableCell>{{ shipment.vessel_name || '-' }}</TableCell>
                             <TableCell>{{ shipment.voyage_number || '-' }}</TableCell>
                             <TableCell>{{ dateLabel(shipment.etd) }}</TableCell>
@@ -110,7 +120,7 @@ const statusClass = (value: string | null) => { const status = value?.toLowerCas
                         </TableRow>
                     </template>
                     <TableRow v-else>
-                        <TableCell colspan="16" class="h-32 text-center">{{ search.trim() ? 'No shipments match your search criteria.' : 'No shipments found.' }}</TableCell>
+                        <TableCell colspan="19" class="h-32 text-center">{{ search.trim() ? 'No shipments match your search criteria.' : 'No shipments found.' }}</TableCell>
                     </TableRow>
                 </TableBody>
             </Table>

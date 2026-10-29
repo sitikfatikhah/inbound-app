@@ -37,7 +37,21 @@ interface Product {
     facility?: string | null
 }
 
-interface PurchaseOrderItem {
+interface PurchaseOrderItemFromBackend {
+    id?: number | string
+    product_id: number | string | null
+    product_code?: string | null
+    product_name?: string | null
+    quantity: number | string | null
+    unit?: string | null
+    hs_code?: string | null
+    import_duty?: number | string | null
+    facility?: string | null
+    unit_price: number | string | null
+    product?: Product | null
+}
+
+interface PurchaseOrderItemForm {
     id?: number | string
     product_id: number | string | null
     product_code: string
@@ -50,8 +64,7 @@ interface PurchaseOrderItem {
     unit_price: number | string
     total_price: number | string
 }
-
-interface PurchaseOrders {
+interface PurchaseOrder {
     id: number
     supplier_id: number | string | null
     category: string | null
@@ -64,11 +77,11 @@ interface PurchaseOrders {
     delivery_date: string | Date | null
     arrival_date: string | Date | null
     status: string | null
-    items?: PurchaseOrderItem[]
+    items?: PurchaseOrderItemFromBackend[]
 }
 
 const props = defineProps<{
-    purchaseOrder: PurchaseOrders
+    purchaseOrder: PurchaseOrder
     suppliers?: Suppliers[]
     products?: Product[]
 }>()
@@ -90,7 +103,26 @@ const toDateInputValue = (
 
     return String(value).slice(0, 10)
 }
-
+const mapItem = (
+    item: PurchaseOrderItemFromBackend
+): PurchaseOrderItemForm => {
+    const product = item.product
+    const quantity = Number(item.quantity ?? 0)
+    const unitPrice = Number(item.unit_price ?? 0)
+    return {
+        id: item.id,
+        product_id: item.product_id ?? null,
+        product_code: item.product_code ?? product?.product_code ?? '',
+        product_name: item.product_name ?? product?.product_name ?? '',
+        quantity: item.quantity ?? 1,
+        unit: item.unit ?? product?.unit ?? '',
+        hs_code: item.hs_code ?? product?.hs_code ?? '',
+        import_duty: Number(item.import_duty ?? product?.import_duty ?? 0),
+        facility: item.facility ?? product?.facility ?? '',
+        unit_price: item.unit_price ?? 0,
+        total_price: quantity * unitPrice,
+    }
+}
 /**
  * Form
  */
@@ -127,43 +159,7 @@ const form = useForm({
     status:
         props.purchaseOrder.status ?? 'DRAFT',
 
-    items: (props.purchaseOrder.items ?? []).map(
-        (item) => ({
-            id: item.id,
-
-            product_id:
-                item.product_id ?? null,
-
-            product_code:
-                item.product_code ?? '',
-
-            product_name:
-                item.product_name ?? '',
-
-            quantity:
-                item.quantity ?? 1,
-
-            unit:
-                item.unit ?? '',
-
-            hs_code:
-                item.hs_code ?? '',
-
-            import_duty:
-                item.import_duty ?? 0,
-
-            facility:
-                item.facility ?? '',
-
-            unit_price:
-                item.unit_price ?? 0,
-
-            total_price:
-                item.total_price ??
-                Number(item.quantity ?? 0) *
-                    Number(item.unit_price ?? 0),
-        })
-    ),
+    items: (props.purchaseOrder.items ?? []).map(mapItem),
 })
 
 /**
@@ -206,7 +202,7 @@ const removeItem = (index: number) => {
  * Select product
  */
 const selectProduct = (
-    item: PurchaseOrderItem
+    item: PurchaseOrderItemForm
 ) => {
     const product =
         props.products?.find(
@@ -253,7 +249,7 @@ const selectProduct = (
  * Calculate item total
  */
 const calculateItemTotal = (
-    item: PurchaseOrderItem
+    item: PurchaseOrderItemForm
 ) => {
     const quantity =
         Number(item.quantity || 0)
@@ -437,279 +433,167 @@ const handleSubmit = () => {
 </script>
 
 <template>
-    <div
-        class="mx-4 w-full space-y-6 rounded-lg border bg-card p-6"
-    >
+    <div class="mx-4 w-full space-y-6 rounded-lg border bg-card p-6">
         <!-- Header -->
         <div>
-            <Link
-                href="/po"
-                class="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-            >
+            <Link href="/po" class="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
                 <ArrowLeft class="h-4 w-4" />
 
                 Back to Purchase Order
             </Link>
 
-            <h1
-                class="mt-4 text-2xl font-semibold tracking-tight"
-            >
+            <h1 class="mt-4 text-2xl font-semibold tracking-tight">
                 Edit Purchase Order
             </h1>
 
-            <p
-                class="text-sm text-muted-foreground"
-            >
+            <p class="text-sm text-muted-foreground">
                 Edit the purchase order details.
             </p>
         </div>
 
         <!-- Form -->
-        <form
-            @submit.prevent="handleSubmit"
-            class="space-y-6"
-        >
+        <form @submit.prevent="handleSubmit" class="space-y-6">
             <!-- Purchase Order Information -->
-            <div
-                class="mx-4 rounded-lg border bg-card"
-            >
-                <div
-                    class="border-b p-6"
-                >
-                    <h2
-                        class="font-semibold"
-                    >
+            <div class="mx-4 rounded-lg border bg-card">
+                <div class="border-b p-6">
+                    <h2 class="font-semibold">
                         Purchase Order Information
                     </h2>
 
-                    <p
-                        class="text-sm text-muted-foreground"
-                    >
+                    <p class="text-sm text-muted-foreground">
                         Enter the basic purchase order information.
                     </p>
                 </div>
 
-                <div
-                    class="grid gap-6 p-6 md:grid-cols-2 lg:grid-cols-3"
-                >
+                <div class="grid gap-6 p-6 md:grid-cols-2 lg:grid-cols-3">
                     <!-- PO Number -->
-                    <div
-                        class="space-y-2"
-                    >
-                        <label
-                            class="text-sm font-medium"
-                        >
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium">
                             Purchase Order Number
                         </label>
 
-                        <Input
-                            v-model="form.po_number"
-                            placeholder="Enter purchase order number"
-                        />
+                        <Input v-model="form.po_number" placeholder="Enter purchase order number" />
 
-                        <p
-                            v-if="form.errors.po_number"
-                            class="text-sm text-destructive"
-                        >
+                        <p v-if="form.errors.po_number" class="text-sm text-destructive">
                             {{ form.errors.po_number }}
                         </p>
                     </div>
 
                     <!-- Supplier -->
-                    <div
-                        class="space-y-2"
-                    >
-                        <label
-                            class="text-sm font-medium"
-                        >
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium">
                             Supplier
                         </label>
 
-                        <select
-                            v-model="form.supplier_id"
-                            class="flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm"
-                        >
+                        <select v-model="form.supplier_id"
+                            class="flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm">
                             <option value="">
                                 Select supplier
                             </option>
 
-                            <option
-                                v-for="supplier in supplierIdOptions"
-                                :key="supplier.value"
-                                :value="supplier.value"
-                            >
+                            <option v-for="supplier in supplierIdOptions" :key="supplier.value" :value="supplier.value">
                                 {{ supplier.label }}
                             </option>
                         </select>
 
-                        <p
-                            v-if="form.errors.supplier_id"
-                            class="text-sm text-destructive"
-                        >
+                        <p v-if="form.errors.supplier_id" class="text-sm text-destructive">
                             {{ form.errors.supplier_id }}
                         </p>
                     </div>
 
                     <!-- Category -->
-                    <div
-                        class="space-y-2"
-                    >
-                        <label
-                            class="text-sm font-medium"
-                        >
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium">
                             Category
                         </label>
 
-                        <select
-                            v-model="form.category"
-                            class="flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm"
-                        >
+                        <select v-model="form.category"
+                            class="flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm">
                             <option value="">
                                 Select category
                             </option>
 
-                            <option
-                                v-for="category in categoryOptions"
-                                :key="category.value"
-                                :value="category.value"
-                            >
+                            <option v-for="category in categoryOptions" :key="category.value" :value="category.value">
                                 {{ category.label }}
                             </option>
                         </select>
 
-                        <p
-                            v-if="form.errors.category"
-                            class="text-sm text-destructive"
-                        >
+                        <p v-if="form.errors.category" class="text-sm text-destructive">
                             {{ form.errors.category }}
                         </p>
                     </div>
 
                     <!-- PO Date -->
-                    <div
-                        class="space-y-2"
-                    >
-                        <label
-                            class="text-sm font-medium"
-                        >
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium">
                             Purchase Order Date
                         </label>
 
-                        <Input
-                            v-model="form.po_date"
-                            type="date"
-                        />
+                        <Input v-model="form.po_date" type="date" />
 
-                        <p
-                            v-if="form.errors.po_date"
-                            class="text-sm text-destructive"
-                        >
+                        <p v-if="form.errors.po_date" class="text-sm text-destructive">
                             {{ form.errors.po_date }}
                         </p>
                     </div>
 
                     <!-- Currency -->
-                    <div
-                        class="space-y-2"
-                    >
-                        <label
-                            class="text-sm font-medium"
-                        >
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium">
                             Currency
                         </label>
 
-                        <Input
-                            v-model="form.currency"
-                            placeholder="Enter currency"
-                        />
+                        <Input v-model="form.currency" placeholder="Enter currency" />
 
-                        <p
-                            v-if="form.errors.currency"
-                            class="text-sm text-destructive"
-                        >
+                        <p v-if="form.errors.currency" class="text-sm text-destructive">
                             {{ form.errors.currency }}
                         </p>
                     </div>
 
                     <!-- Exchange Rate -->
-                    <div
-                        class="space-y-2"
-                    >
-                        <label
-                            class="text-sm font-medium"
-                        >
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium">
                             Exchange Rate
                         </label>
 
-                        <Input
-                            v-model="form.exchange_rate"
-                            type="number"
-                            step="0.01"
-                            placeholder="Enter exchange rate"
-                        />
+                        <Input v-model="form.exchange_rate" type="number" step="0.01"
+                            placeholder="Enter exchange rate" />
 
-                        <p
-                            v-if="form.errors.exchange_rate"
-                            class="text-sm text-destructive"
-                        >
+                        <p v-if="form.errors.exchange_rate" class="text-sm text-destructive">
                             {{ form.errors.exchange_rate }}
                         </p>
                     </div>
 
                     <!-- Payment Term -->
-                    <div
-                        class="space-y-2"
-                    >
-                        <label
-                            class="text-sm font-medium"
-                        >
-                            Payment Term
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium">
+                            Term Of Payment (TOP)
                         </label>
 
-                        <Input
-                            v-model="form.payment_term"
-                            placeholder="Enter payment term"
-                        />
+                        <Input v-model="form.payment_term" placeholder="Enter payment term" />
 
-                        <p
-                            v-if="form.errors.payment_term"
-                            class="text-sm text-destructive"
-                        >
+                        <p v-if="form.errors.payment_term" class="text-sm text-destructive">
                             {{ form.errors.payment_term }}
                         </p>
                     </div>
 
                     <!-- Incoterm -->
-                    <div
-                        class="space-y-2"
-                    >
-                        <label
-                            class="text-sm font-medium"
-                        >
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium">
                             Incoterm
                         </label>
 
-                        <select
-                            v-model="form.incoterm"
-                            class="flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm"
-                        >
+                        <select v-model="form.incoterm"
+                            class="flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm">
                             <option value="">
                                 Select incoterm
                             </option>
 
-                            <option
-                                v-for="incoterm in incotermOptions"
-                                :key="incoterm.value"
-                                :value="incoterm.value"
-                            >
+                            <option v-for="incoterm in incotermOptions" :key="incoterm.value" :value="incoterm.value">
                                 {{ incoterm.label }}
                             </option>
                         </select>
 
-                        <p
-                            v-if="form.errors.incoterm"
-                            class="text-sm text-destructive"
-                        >
+                        <p v-if="form.errors.incoterm" class="text-sm text-destructive">
                             {{ form.errors.incoterm }}
                         </p>
                     </div>
@@ -717,82 +601,46 @@ const handleSubmit = () => {
             </div>
 
             <!-- Schedule / Items -->
-            <div
-                class="mx-4 mb-6 rounded-lg border bg-card"
-            >
-                <Tabs
-                    default-value="item"
-                    class="w-full"
-                >
+            <div class="mx-4 mb-6 rounded-lg border bg-card">
+                <Tabs default-value="item" class="w-full">
                     <!-- Tabs Header -->
-                    <div
-                        class="border-b px-6 pt-4"
-                    >
+                    <div class="border-b px-6 p-4">
                         <TabsList>
-                            <TabsTrigger
-                                value="schedule"
-                            >
+                            <TabsTrigger value="schedule">
                                 Schedule
                             </TabsTrigger>
 
-                            <TabsTrigger
-                                value="item"
-                            >
+                            <TabsTrigger value="item">
                                 Items
                             </TabsTrigger>
                         </TabsList>
                     </div>
 
                     <!-- Schedule Tab -->
-                    <TabsContent
-                        value="schedule"
-                        class="p-6"
-                    >
-                        <div
-                            class="grid gap-6 md:grid-cols-2"
-                        >
+                    <TabsContent value="schedule" class="p-6">
+                        <div class="grid gap-6 md:grid-cols-2">
                             <!-- Delivery Date -->
-                            <div
-                                class="space-y-2"
-                            >
-                                <label
-                                    class="text-sm font-medium"
-                                >
-                                    Delivery Date
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium">
+                                    Estimation Time of Departure (ETD)
                                 </label>
 
-                                <Input
-                                    v-model="form.delivery_date"
-                                    type="date"
-                                />
+                                <Input v-model="form.delivery_date" type="date" />
 
-                                <p
-                                    v-if="form.errors.delivery_date"
-                                    class="text-sm text-destructive"
-                                >
+                                <p v-if="form.errors.delivery_date" class="text-sm text-destructive">
                                     {{ form.errors.delivery_date }}
                                 </p>
                             </div>
 
                             <!-- Arrival Date -->
-                            <div
-                                class="space-y-2"
-                            >
-                                <label
-                                    class="text-sm font-medium"
-                                >
-                                    Arrival Date
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium">
+                                    Estimation Time of Arrival (ETA)
                                 </label>
 
-                                <Input
-                                    v-model="form.arrival_date"
-                                    type="date"
-                                />
+                                <Input v-model="form.arrival_date" type="date" />
 
-                                <p
-                                    v-if="form.errors.arrival_date"
-                                    class="text-sm text-destructive"
-                                >
+                                <p v-if="form.errors.arrival_date" class="text-sm text-destructive">
                                     {{ form.errors.arrival_date }}
                                 </p>
                             </div>
@@ -800,56 +648,33 @@ const handleSubmit = () => {
                     </TabsContent>
 
                     <!-- Items Tab -->
-                    <TabsContent
-                        value="item"
-                        class="w-full"
-                    >
-                        <div
-                            class="rounded-lg border bg-card"
-                        >
+                    <TabsContent value="item" class="w-full">
+                        <div class="rounded-lg border bg-card">
                             <!-- Header -->
-                            <div
-                                class="flex items-center justify-between border-b p-6"
-                            >
+                            <div class="flex items-center justify-between border-b p-6">
                                 <div>
-                                    <h2
-                                        class="font-semibold"
-                                    >
+                                    <h2 class="font-semibold">
                                         Purchase Order Items
                                     </h2>
 
-                                    <p
-                                        class="text-sm text-muted-foreground"
-                                    >
+                                    <p class="text-sm text-muted-foreground">
                                         Add products included in this purchase order.
                                     </p>
                                 </div>
 
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    @click="addItem"
-                                >
-                                    <Plus
-                                        class="mr-2 h-4 w-4"
-                                    />
+                                <Button type="button" variant="outline" @click="addItem">
+                                    <Plus class="mr-2 h-4 w-4" />
 
                                     Add Item
                                 </Button>
                             </div>
 
                             <!-- Table -->
-                            <div
-                                class="w-full overflow-x-auto p-6"
-                            >
-                                <Table
-                                    class="min-w-[1200px]"
-                                >
+                            <div class="w-full overflow-x-auto p-6">
+                                <Table class="min-w-[1200px]">
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead
-                                                class="w-[250px]"
-                                            >
+                                            <TableHead class="w-[250px]">
                                                 Product
                                             </TableHead>
 
@@ -859,6 +684,10 @@ const handleSubmit = () => {
 
                                             <TableHead>
                                                 Unit
+                                            </TableHead>
+
+                                            <TableHead>
+                                                HS Code
                                             </TableHead>
 
                                             <TableHead>
@@ -877,9 +706,7 @@ const handleSubmit = () => {
                                                 Total Price
                                             </TableHead>
 
-                                            <TableHead
-                                                class="w-[60px]"
-                                            >
+                                            <TableHead class="w-[60px]">
                                                 Action
                                             </TableHead>
                                         </TableRow>
@@ -887,30 +714,20 @@ const handleSubmit = () => {
 
                                     <TableBody>
                                         <!-- Items -->
-                                        <TableRow
-                                            v-for="(
-                                                item,
-                                                index
-                                            ) in form.items"
-                                            :key="
-                                                item.id ??
+                                        <TableRow v-for="(item,index) in form.items" 
+                                            :key="item.id ??
                                                 `new-${index}`
-                                            "
-                                        >
+                                                ">
                                             <!-- Product -->
                                             <TableCell>
-                                                <select
-                                                    v-model="item.product_id"
-                                                    @change="selectProduct(item)"
-                                                    class="flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm"
-                                                >
+                                                <select v-model="item.product_id" @change="selectProduct(item)"
+                                                    class="flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm">
                                                     <option value="">
                                                         Select Product
                                                     </option>
 
-                                                    <option
-                                                        v-for="product in props.products ?? []" :key="product.id" :value="product.id"
-                                                    >
+                                                    <option v-for="product in props.products ?? []" :key="product.id"
+                                                        :value="product.id">
                                                         {{ product.product_code }}
                                                         -
                                                         {{ product.product_name }}
@@ -920,63 +737,37 @@ const handleSubmit = () => {
 
                                             <!-- Quantity -->
                                             <TableCell>
-                                                <Input
-                                                    v-model.number="
-                                                        item.quantity
-                                                    "
-                                                    type="number"
-                                                    min="0.01"
-                                                    step="0.01"
-                                                    class="w-24"
-                                                    @input="
-                                                        calculateItemTotal(
-                                                            item
-                                                        )
-                                                    "
-                                                />
+                                                <Input v-model.number="item.quantity
+                                                    " type="number" min="0.01" step="0.01" class="w-24" @input="
+                                                        calculateItemTotal(item)
+                                                        " />
                                             </TableCell>
 
                                             <!-- Unit -->
                                             <TableCell>
-                                                <Input
-                                                    v-model="
-                                                        item.unit
-                                                    "
-                                                    class="w-24"
-                                                    placeholder="PCS"
-                                                />
+                                                <Input v-model="item.unit
+                                                    " class="w-24" placeholder="PCS" />
+                                            </TableCell>
+
+                                            <!-- HS Code -->
+                                            <TableCell>
+                                                <Input v-model="item.hs_code
+                                                    " class="w-32" placeholder="HS Code" />
                                             </TableCell>
 
                                             <!-- Facility -->
                                             <TableCell>
-                                                <Input
-                                                    v-model="
-                                                        item.facility
-                                                    "
-                                                    class="w-28"
-                                                    placeholder="Facility"
-                                                />
+                                                <Input v-model="item.facility
+                                                    " class="w-28" placeholder="Facility" />
                                             </TableCell>
 
                                             <!-- Import Duty -->
                                             <TableCell>
-                                                <div
-                                                    class="flex items-center gap-1"
-                                                >
-                                                    <Input
-                                                        v-model.number="
-                                                            item.import_duty
-                                                        "
-                                                        type="number"
-                                                        min="0"
-                                                        max="100"
-                                                        step="0.01"
-                                                        class="w-24"
-                                                    />
+                                                <div class="flex items-center gap-1">
+                                                    <Input v-model.number="item.import_duty
+                                                        " type="number" min="0" max="100" step="0.01" class="w-24" />
 
-                                                    <span
-                                                        class="text-sm text-muted-foreground"
-                                                    >
+                                                    <span class="text-sm text-muted-foreground">
                                                         %
                                                     </span>
                                                 </div>
@@ -984,31 +775,22 @@ const handleSubmit = () => {
 
                                             <!-- Unit Price -->
                                             <TableCell>
-                                                <Input
-                                                    v-model.number="
-                                                        item.unit_price
-                                                    "
-                                                    type="number"
-                                                    min="0"
-                                                    step="0.01"
-                                                    class="w-32"
-                                                    @input="
+                                                <Input v-model.number="item.unit_price
+                                                    " type="number" min="0" step="0.01" class="w-32" @input="
                                                         calculateItemTotal(
                                                             item
                                                         )
-                                                    "
-                                                />
+                                                        " />
                                             </TableCell>
 
                                             <!-- Total -->
                                             <TableCell>
                                                 <div
-                                                    class="flex h-10 w-32 items-center rounded-md border bg-muted px-3 text-sm"
-                                                >
+                                                    class="flex h-10 w-32 items-center rounded-md border bg-muted px-3 text-sm">
                                                     {{
                                                         Number(
                                                             item.total_price ||
-                                                                0
+                                                            0
                                                         ).toLocaleString(
                                                             'id-ID'
                                                         )
@@ -1018,53 +800,32 @@ const handleSubmit = () => {
 
                                             <!-- Remove -->
                                             <TableCell>
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    @click="
-                                                        removeItem(
-                                                            index
-                                                        )
-                                                    "
-                                                >
-                                                    <Trash2
-                                                        class="h-4 w-4 text-destructive"
-                                                    />
+                                                <Button type="button" variant="ghost" size="icon" @click="
+                                                    removeItem(
+                                                        index
+                                                    )
+                                                    ">
+                                                    <Trash2 class="h-4 w-4 text-destructive" />
                                                 </Button>
                                             </TableCell>
                                         </TableRow>
 
                                         <!-- Empty State -->
-                                        <TableRow
-                                            v-if="
-                                                form.items
-                                                    .length ===
-                                                0
-                                            "
-                                        >
-                                            <TableCell
-                                                colspan="8"
-                                                class="py-10 text-center text-muted-foreground"
-                                            >
-                                                <div
-                                                    class="flex flex-col items-center gap-2"
-                                                >
+                                        <TableRow v-if="
+                                            form.items
+                                                .length ===
+                                            0
+                                        ">
+                                            <TableCell colspan="9" class="py-10 text-center text-muted-foreground">
+                                                <div class="flex flex-col items-center gap-2">
                                                     <p>
                                                         No items added yet.
                                                     </p>
 
-                                                    <Button
-                                                        type="button"
-                                                        variant="outline"
-                                                        size="sm"
-                                                        @click="
-                                                            addItem
-                                                        "
-                                                    >
-                                                        <Plus
-                                                            class="mr-2 h-4 w-4"
-                                                        />
+                                                    <Button type="button" variant="outline" size="sm" @click="
+                                                        addItem
+                                                    ">
+                                                        <Plus class="mr-2 h-4 w-4" />
 
                                                         Add First Item
                                                     </Button>
@@ -1076,16 +837,11 @@ const handleSubmit = () => {
                                     <!-- Total -->
                                     <TableFooter>
                                         <TableRow>
-                                            <TableCell
-                                                colspan="6"
-                                                class="text-right font-semibold"
-                                            >
+                                            <TableCell colspan="7" class="text-right font-semibold">
                                                 Grand Total
                                             </TableCell>
 
-                                            <TableCell
-                                                class="font-semibold"
-                                            >
+                                            <TableCell class="font-semibold">
                                                 {{
                                                     grandTotal.toLocaleString(
                                                         'id-ID'
@@ -1104,49 +860,28 @@ const handleSubmit = () => {
             </div>
 
             <!-- Related Information -->
-            <div
-                class="mx-4 rounded-lg border bg-card"
-            >
-                <div
-                    class="border-b p-6"
-                >
-                    <h2
-                        class="font-semibold"
-                    >
+            <div class="mx-4 rounded-lg border bg-card">
+                <div class="border-b p-6">
+                    <h2 class="font-semibold">
                         Related Information
                     </h2>
                 </div>
 
-                <div
-                    class="grid gap-6 p-6 md:grid-cols-2 lg:grid-cols-3"
-                >
+                <div class="grid gap-6 p-6 md:grid-cols-2 lg:grid-cols-3">
                     <!-- Status -->
-                    <div
-                        class="space-y-2"
-                    >
-                        <label
-                            class="text-sm font-medium"
-                        >
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium">
                             Status
                         </label>
 
-                        <select
-                            v-model="form.status"
-                            class="flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm"
-                        >
-                            <option
-                                v-for="status in statusOptions"
-                                :key="status.value"
-                                :value="status.value"
-                            >
+                        <select v-model="form.status"
+                            class="flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm">
+                            <option v-for="status in statusOptions" :key="status.value" :value="status.value">
                                 {{ status.label }}
                             </option>
                         </select>
 
-                        <p
-                            v-if="form.errors.status"
-                            class="text-sm text-destructive"
-                        >
+                        <p v-if="form.errors.status" class="text-sm text-destructive">
                             {{ form.errors.status }}
                         </p>
                     </div>
@@ -1154,23 +889,14 @@ const handleSubmit = () => {
             </div>
 
             <!-- Actions -->
-            <div
-                class="flex justify-end gap-4 p-6"
-            >
-                <Button
-                    type="button"
-                    variant="outline"
-                    as-child
-                >
+            <div class="flex justify-end gap-4 p-6">
+                <Button type="button" variant="outline" as-child>
                     <Link href="/po">
                         Cancel
                     </Link>
                 </Button>
 
-                <Button
-                    type="submit"
-                    :disabled="form.processing"
-                >
+                <Button type="submit" :disabled="form.processing">
                     {{
                         form.processing
                             ? 'Saving...'

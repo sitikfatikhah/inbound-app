@@ -13,4 +13,6 @@ interface ShipmentServiceInterface
     public function delete(Shipments $shipment): bool;
 
     public function generateShipmentNumber(): string;
+
+    public function getPurchaseOrderItems(): array;
 }

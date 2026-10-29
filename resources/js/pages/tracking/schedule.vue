@@ -6,6 +6,7 @@ import {
     ChevronLeft,
     ChevronRight,
     ExternalLink,
+    Package,
     Ship,
     Truck,
 } from 'lucide-vue-next';
@@ -15,6 +16,7 @@ interface Shipment {
     id: number;
     shipment_number: string;
     bl_number: string | null;
+    invoice_number: string | null;
     vessel_name: string | null;
     voyage_number: string | null;
     eta: string | null;
@@ -23,7 +25,10 @@ interface Shipment {
     status_document: string | null;
     port_of_loading?: { port_name: string } | null;
     port_of_discharge?: { port_name: string } | null;
-    warehouse?: { warehouse_name: string } | null;
+    purchase_orders?: {
+        po_number: string;
+        items?: { product?: { category: string | null } | null }[];
+    }[];
 }
 
 const props = defineProps<{ shipments?: Shipment[] }>();
@@ -39,8 +44,8 @@ const filteredShipments = computed(() =>
                 shipment.shipment_number,
                 shipment.bl_number,
                 shipment.vessel_name,
+                shipment.port_of_loading?.port_name,
                 shipment.port_of_discharge?.port_name,
-                shipment.warehouse?.warehouse_name,
             ].some((value) =>
                 String(value ?? '')
                     .toLowerCase()
@@ -84,6 +89,16 @@ function formatDate(value: string | null) {
 }
 function statusLabel(value: string | null) {
     return value || 'Belum ada status';
+}
+function purchaseOrderNumbers(shipment: Shipment) {
+    return shipment.purchase_orders?.map((order) => order.po_number).join(', ') || '-';
+}
+function productCategories(shipment: Shipment) {
+    const categories = shipment.purchase_orders?.flatMap((order) =>
+        order.items?.map((item) => item.product?.category).filter(Boolean) ?? [],
+    ) ?? [];
+
+    return [...new Set(categories)].join(', ') || '-';
 }
 </script>
 
@@ -221,98 +236,83 @@ function statusLabel(value: string | null) {
                         }"
                     >
                         <div
-                            class="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center"
+                            class="flex flex-col gap-4"
                         >
-                            <div class="flex items-center gap-4">
-                                <div
-                                    class="flex size-12 items-center justify-center rounded-lg bg-primary/10 text-primary"
-                                >
-                                    <Ship class="size-6" />
-                                </div>
-                                <div>
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex items-center gap-4">
                                     <div
-                                        class="flex flex-wrap items-center gap-2"
+                                        class="flex size-12 items-center justify-center rounded-lg bg-primary/10 text-primary"
                                     >
-                                        <h3
-                                            class="text-lg font-bold text-foreground"
-                                        >
-                                            {{ shipment.shipment_number }}
-                                        </h3>
-                                        <span
-                                            class="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary uppercase"
-                                            >{{
-                                                shipment.status_document ||
-                                                'Shipment'
-                                            }}</span
-                                        >
+                                        <Ship class="size-6" />
                                     </div>
-                                    <p
-                                        class="mt-1 text-sm text-muted-foreground"
-                                    >
-                                        {{
-                                            shipment.vessel_name ||
-                                            'Kapal belum diisi'
-                                        }}
-                                        ·
-                                        {{
-                                            shipment.port_of_loading
-                                                ?.port_name || '-'
-                                        }}
-                                        →
-                                        {{
-                                            shipment.port_of_discharge
-                                                ?.port_name || '-'
-                                        }}
-                                    </p>
+                                    <div>
+                                        <div
+                                            class="flex flex-wrap items-center gap-2"
+                                        >
+                                            <h3
+                                                class="text-lg font-bold text-foreground"
+                                            >
+                                                {{ shipment.shipment_number }}
+                                            </h3>
+                                            <span
+                                                class="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary uppercase"
+                                                >{{
+                                                    shipment.status_document ||
+                                                    'Shipment'
+                                                }}</span
+                                            >
+                                        </div>
+                                        <p
+                                            class="mt-1 text-sm text-muted-foreground"
+                                        >
+                                            {{
+                                                shipment.vessel_name ||
+                                                'Kapal belum diisi'
+                                            }}
+                                            ·
+                                            {{
+                                                shipment.port_of_loading
+                                                    ?.port_name || '-'
+                                            }}
+                                            →
+                                            {{
+                                                shipment.port_of_discharge
+                                                    ?.port_name || '-'
+                                            }}
+                                        </p>
+                                    </div>
                                 </div>
+                                <Link
+                                    :href="`/shipments/${shipment.id}`"
+                                    class="rounded-md p-2 text-muted-foreground transition hover:bg-muted hover:text-primary"
+                                    :aria-label="`Buka ${shipment.shipment_number}`"
+                                    ><ExternalLink class="size-5"
+                                /></Link>
                             </div>
                             <div
-                                class="grid w-full grid-cols-2 gap-4 border-t border-border pt-4 text-sm md:w-auto md:grid-cols-3 md:border-t-0 md:border-l md:pt-0 md:pl-5"
+                                class="grid grid-cols-2 gap-4 border-t border-border pt-4 text-sm sm:grid-cols-3 lg:grid-cols-5"
                             >
                                 <div>
-                                    <p
-                                        class="text-[10px] tracking-wider text-muted-foreground uppercase"
-                                    >
-                                        ETA
-                                    </p>
-                                    <p class="font-bold">
-                                        {{ formatDate(shipment.eta) }}
-                                    </p>
+                                    <p class="text-[10px] tracking-wider text-muted-foreground uppercase">ETA</p>
+                                    <p class="font-bold">{{ formatDate(shipment.eta) }}</p>
                                 </div>
                                 <div>
-                                    <p
-                                        class="text-[10px] tracking-wider text-muted-foreground uppercase"
-                                    >
-                                        Gudang
-                                    </p>
-                                    <p class="font-bold">
-                                        {{
-                                            shipment.warehouse
-                                                ?.warehouse_name || '-'
-                                        }}
-                                    </p>
+                                    <p class="text-[10px] tracking-wider text-muted-foreground uppercase">Invoice</p>
+                                    <p class="font-bold">{{ shipment.invoice_number || '-' }}</p>
                                 </div>
                                 <div>
-                                    <p
-                                        class="text-[10px] tracking-wider text-muted-foreground uppercase"
-                                    >
-                                        Status
-                                    </p>
-                                    <p class="font-bold text-primary">
-                                        {{
-                                            statusLabel(
-                                                shipment.tracking_status,
-                                            )
-                                        }}
-                                    </p>
+                                    <p class="text-[10px] tracking-wider text-muted-foreground uppercase">No. PO</p>
+                                    <p class="font-bold">{{ purchaseOrderNumbers(shipment) }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] tracking-wider text-muted-foreground uppercase">Kategori barang</p>
+                                    <p class="font-bold">{{ productCategories(shipment) }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] tracking-wider text-muted-foreground uppercase">Status</p>
+                                    <p class="font-bold text-primary">{{ statusLabel(shipment.tracking_status) }}</p>
                                 </div>
                             </div>
-                            <Link
-                                :href="`/shipments/${shipment.id}`"
-                                class="self-end rounded-md p-2 text-muted-foreground transition hover:bg-muted hover:text-primary"
-                                :aria-label="`Buka ${shipment.shipment_number}`"
-                                ><ExternalLink class="size-5"
-                            /></Link>
                         </div>
                     </div>
                     <div
@@ -374,7 +374,7 @@ function statusLabel(value: string | null) {
                         Cari jadwal
                     </h2>
                     <p class="mt-1 text-sm text-muted-foreground">
-                        Nomor shipment, kapal, port, atau gudang.
+                        Nomor shipment, BL, atau port muat dan bongkar.
                     </p>
                     <input
                         v-model="search"
@@ -396,8 +396,10 @@ function statusLabel(value: string | null) {
                             dari shipment
                         </p>
                         <p class="flex items-center gap-2">
-                            <Truck class="size-4 text-primary" /> Tujuan
-                            warehouse terhubung
+                            <Truck class="size-4 text-primary" /> Invoice dan PO terhubung ke shipment
+                        </p>
+                        <p class="flex items-center gap-2">
+                            <Package class="size-4 text-primary" /> Kategori mengikuti barang pada PO
                         </p>
                     </div>
                 </div>

@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
-interface Milestone {
+interface ShipmentMilestones {
     id: number;
     milestone_name: string;
     status: 'Planned' | 'In Progress' | 'Completed';
@@ -41,7 +41,7 @@ interface Shipment {
     port_of_loading?: { port_name: string } | null;
     port_of_discharge?: { port_name: string } | null;
     warehouse?: { warehouse_name: string } | null;
-    milestones?: Milestone[];
+    milestones?: ShipmentMilestones[];
 }
 const props = defineProps<{ shipments?: Shipment[] }>();
 const search = ref('');
@@ -126,7 +126,7 @@ function progress(shipment: Shipment) {
 function isException(shipment: Shipment) {
     return /delay|exception/i.test(shipment.tracking_status ?? '');
 }
-function milestoneClass(status: Milestone['status']) {
+function milestoneClass(status: ShipmentMilestones['status']) {
     return status === 'Completed'
         ? 'bg-emerald-500 text-white'
         : status === 'In Progress'

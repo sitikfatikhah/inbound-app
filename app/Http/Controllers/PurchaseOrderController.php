@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\PurchaseOrderItemsRequest;
 use App\Http\Requests\PurchaseOrderRequest;
 use App\Models\Products;
 use App\Models\PurchaseOrders;
@@ -19,14 +18,15 @@ class PurchaseOrderController extends Controller
     ) {}
 
     /**
-     * Display a listing of the resource.
+     * Display a listing of purchase orders.
      */
     public function index(): Response
     {
-        $purchaseOrders = PurchaseOrders::with([
-            'supplier',
-            'items.product',
-        ])
+        $purchaseOrders = PurchaseOrders::query()
+            ->with([
+                'supplier',
+                'items.product',
+            ])
             ->latest()
             ->get();
 
@@ -36,17 +36,19 @@ class PurchaseOrderController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Show the form for creating a new purchase order.
      */
     public function create(): Response
     {
-        $suppliers = Suppliers::orderBy('supplier_name')
+        $suppliers = Suppliers::query()
+            ->orderBy('supplier_name')
             ->get([
                 'id',
                 'supplier_name',
             ]);
 
-        $products = Products::where('is_active', true)
+        $products = Products::query()
+            ->where('is_active', true)
             ->orderBy('product_name')
             ->get([
                 'id',
@@ -60,7 +62,10 @@ class PurchaseOrderController extends Controller
 
         return Inertia::render('po/create', [
             'purchaseOrders' => PurchaseOrders::query()
-                ->select('id', 'po_number')
+                ->select([
+                    'id',
+                    'po_number',
+                ])
                 ->orderBy('po_number')
                 ->get(),
 
@@ -70,27 +75,29 @@ class PurchaseOrderController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store a newly created purchase order.
      */
     public function store(
-        PurchaseOrderRequest $request,
-        PurchaseOrderItemsRequest $itemsRequest
+        PurchaseOrderRequest $request
     ): RedirectResponse {
         $this->purchaseOrderService->create(
-            $request->validated(),
-            $itemsRequest->validated()
+            $request->validated()
         );
 
         return redirect()
             ->route('po.index')
-            ->with('success', 'Purchase Order berhasil dibuat.');
+            ->with(
+                'success',
+                'Purchase Order berhasil dibuat.'
+            );
     }
 
     /**
-     * Display the specified resource.
+     * Display the specified purchase order.
      */
-    public function show(PurchaseOrders $purchaseOrder): Response
-    {
+    public function show(
+        PurchaseOrders $purchaseOrder
+    ): Response {
         $purchaseOrder->load([
             'supplier',
             'items.product',
@@ -98,21 +105,25 @@ class PurchaseOrderController extends Controller
 
         return Inertia::render('po/show', [
             'purchaseOrder' => $purchaseOrder,
+            'items' => $purchaseOrder->items,
         ]);
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Show the form for editing the specified purchase order.
      */
-    public function edit(PurchaseOrders $purchaseOrder): Response
-    {
-        $suppliers = Suppliers::orderBy('supplier_name')
+    public function edit(
+        PurchaseOrders $purchaseOrder
+    ): Response {
+        $suppliers = Suppliers::query()
+            ->orderBy('supplier_name')
             ->get([
                 'id',
                 'supplier_name',
             ]);
 
-        $products = Products::where('is_active', true)
+        $products = Products::query()
+            ->where('is_active', true)
             ->orderBy('product_name')
             ->get([
                 'id',
@@ -125,7 +136,7 @@ class PurchaseOrderController extends Controller
             ]);
 
         $purchaseOrder->load([
-            'items',
+            'items.product',
         ]);
 
         return Inertia::render('po/edit', [
@@ -136,34 +147,40 @@ class PurchaseOrderController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the specified purchase order.
      */
     public function update(
         PurchaseOrderRequest $request,
-        PurchaseOrders $purchaseOrder,
-        PurchaseOrderItemsRequest $itemsRequest
+        PurchaseOrders $purchaseOrder
     ): RedirectResponse {
         $this->purchaseOrderService->update(
             $purchaseOrder,
-            $request->validated(),
-            $itemsRequest->validated()
+            $request->validated()
         );
 
         return redirect()
             ->route('po.index')
-            ->with('success', 'Purchase Order berhasil diupdate.');
+            ->with(
+                'success',
+                'Purchase Order berhasil diupdate.'
+            );
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified purchase order.
      */
     public function destroy(
         PurchaseOrders $purchaseOrder
     ): RedirectResponse {
-        $this->purchaseOrderService->delete($purchaseOrder);
+        $this->purchaseOrderService->delete(
+            $purchaseOrder
+        );
 
         return redirect()
             ->route('po.index')
-            ->with('success', 'Purchase Order berhasil dihapus.');
+            ->with(
+                'success',
+                'Purchase Order berhasil dihapus.'
+            );
     }
 }

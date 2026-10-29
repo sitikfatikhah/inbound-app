@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
 import {
     Activity,
     BarChart3,
@@ -8,6 +7,7 @@ import {
     Ship,
     TrendingUp,
 } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import {
     Card,
@@ -48,20 +48,6 @@ const completionRate = computed(() =>
         ? Math.round((arrivedOrders.value.length / orders.value.length) * 100)
         : 0,
 );
-const categorySummary = computed(() =>
-    [
-        ...new Set(
-            orders.value.map(
-                (order) => order.category || 'Tidak dikategorikan',
-            ),
-        ),
-    ].map((category) => ({
-        category,
-        count: orders.value.filter(
-            (order) => (order.category || 'Tidak dikategorikan') === category,
-        ).length,
-    })),
-);
 const statusSummary = computed(() =>
     [
         ...new Set(
@@ -77,6 +63,53 @@ const statusSummary = computed(() =>
         ).length,
     })),
 );
+const arrivalSeries = computed(() => {
+    const months = new Map<
+        string,
+        { key: string; label: string; poEta: number; shipmentAta: number }
+    >();
+
+    const getMonth = (value: string) => {
+        const key = value.slice(0, 7);
+        if (!months.has(key)) {
+            const date = new Date(`${key}-01T00:00:00Z`);
+            months.set(key, {
+                key,
+                label: new Intl.DateTimeFormat('id-ID', {
+                    month: 'short',
+                    year: '2-digit',
+                    timeZone: 'UTC',
+                }).format(date),
+                poEta: 0,
+                shipmentAta: 0,
+            });
+        }
+
+        return months.get(key)!;
+    };
+
+    orders.value.forEach((order) => {
+        if (order.arrival_date) {
+            getMonth(order.arrival_date).poEta++;
+        }
+    });
+    shipments.value.forEach((shipment) => {
+        if (shipment.ata) {
+            getMonth(shipment.ata).shipmentAta++;
+        }
+    });
+
+    return [...months.values()].sort((left, right) =>
+        left.key.localeCompare(right.key),
+    );
+});
+const maxArrivalCount = computed(() =>
+    Math.max(
+        1,
+        ...arrivalSeries.value.flatMap((month) => [month.poEta, month.shipmentAta]),
+    ),
+);
+
 function formatDate(value: string | null) {
     return value
         ? new Intl.DateTimeFormat('id-ID', {
@@ -196,6 +229,9 @@ function formatDate(value: string | null) {
                                 ><CardDescription
                                     >Distribusi data purchase order dan shipment
                                     yang tersedia.</CardDescription
+                                                                ><CardDescription
+                                                                    >ETA pada purchase order dibandingkan dengan
+                                                                    tanggal aktual ATA shipment, per bulan.</CardDescription
                                 >
                             </div>
                             <BarChart3
@@ -203,33 +239,40 @@ function formatDate(value: string | null) {
                             /></div></CardHeader
                     ><CardContent
                         ><div
-                            v-if="categorySummary.length"
-                            class="flex h-64 items-end justify-around gap-4 border-b border-slate-200 px-4 pt-8 pb-0"
+                            v-if="arrivalSeries.length"
+                            class="flex h-72 flex-col justify-between"
                         >
-                            <div
-                                v-for="item in categorySummary"
-                                :key="item.category"
-                                class="flex h-full flex-1 flex-col items-center justify-end gap-2"
-                            >
+                            <div class="flex items-center gap-5 text-xs text-slate-600">
+                                <span class="flex items-center gap-2"><span class="size-2.5 rounded-sm bg-amber-500" /> ETA PO</span>
+                                <span class="flex items-center gap-2"><span class="size-2.5 rounded-sm bg-emerald-600" /> ATA shipment</span>
+                            </div>
+                            <div class="flex min-h-0 flex-1 items-end justify-around gap-3 border-b border-slate-200 px-2 pt-5">
                                 <div
-                                    class="w-full max-w-16 rounded-t-lg bg-primary/70 transition-all"
-                                    :style="{
-                                        height: `${Math.max((item.count / Math.max(orders.length, 1)) * 100, 12)}%`,
-                                    }"
-                                />
-                                <span
-                                    class="max-w-24 text-center text-[10px] text-slate-500"
-                                    >{{ item.category }}</span
-                                ><strong class="text-sm text-primary">{{
-                                    item.count
-                                }}</strong>
+                                    v-for="month in arrivalSeries"
+                                    :key="month.key"
+                                    class="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2"
+                                >
+                                    <div class="flex h-full w-full items-end justify-center gap-1.5">
+                                        <div
+                                            class="w-5 max-w-[40%] rounded-t-sm bg-amber-500 transition-all sm:w-8"
+                                            :title="`ETA PO: ${month.poEta}`"
+                                            :style="{ height: `${Math.max((month.poEta / maxArrivalCount) * 100, month.poEta ? 4 : 1)}%` }"
+                                        />
+                                        <div
+                                            class="w-5 max-w-[40%] rounded-t-sm bg-emerald-600 transition-all sm:w-8"
+                                            :title="`ATA shipment: ${month.shipmentAta}`"
+                                            :style="{ height: `${Math.max((month.shipmentAta / maxArrivalCount) * 100, month.shipmentAta ? 4 : 1)}%` }"
+                                        />
+                                    </div>
+                                    <span class="whitespace-nowrap text-[10px] text-slate-500">{{ month.label }}</span>
+                                </div>
                             </div>
                         </div>
                         <div
                             v-else
                             class="flex h-64 items-center justify-center text-sm text-muted-foreground"
                         >
-                            Belum ada data purchase order.
+                            Belum ada data ETA PO atau ATA shipment.
                         </div></CardContent
                     ></Card
                 ><Card class="xl:col-span-4"

@@ -58,7 +58,6 @@ class ShippingLineController extends Controller
      */
     public function update(ShippingLineRequest $request, ShippingLines $shippingLine)
     {
-        dd($request->validated());
         $shippingLine->update($request->validated());
 
         return redirect()

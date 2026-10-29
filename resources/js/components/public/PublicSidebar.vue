@@ -48,7 +48,7 @@ const navigation: NavigationItem[] = [
         icon: Package,
     },
     {
-        title: 'Tracking Local',
+        title: 'Tracking Local PO',
         href: '/tracking-local',
         icon: ClipboardList,
     },

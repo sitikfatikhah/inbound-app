@@ -16,6 +16,16 @@ import {
     FieldLegend,
     FieldSet,
 } from '@/components/ui/field'
+import { Card } from '@/components/ui/card'
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableFooter,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table'
 import Tabs from '@/components/ui/tabs/Tabs.vue'
 
 interface Supplier {
@@ -56,6 +66,7 @@ interface PurchaseOrder {
 
 const props = defineProps<{
     purchaseOrder: PurchaseOrder
+    items?: PurchaseOrderItem[]
 }>()
 const grandTotal = computed(() => {
     return (props.purchaseOrder.items ?? []).reduce((total, item) => {
@@ -144,7 +155,7 @@ const displayValue = (value: string | number | null) => value ?? '-'
             </dl>
         </section>
 
-        <section class="rounded-lg border bg-card">
+        <section class="rounded-lg   bg-card">
             <div class="flex w-full flex-col gap-6 mx-4 rounded-lg border bg-card p-6">
                 <Tabs>
                     <TabsList>
@@ -196,6 +207,10 @@ const displayValue = (value: string | number | null) => value ?? '-'
                                             </TableHead>
 
                                             <TableHead>
+                                                HS Code
+                                            </TableHead>
+
+                                            <TableHead>
                                                 Facility
                                             </TableHead>
 
@@ -238,6 +253,10 @@ const displayValue = (value: string | number | null) => value ?? '-'
                                             </TableCell>
 
                                             <TableCell>
+                                                {{ item.hs_code || '-' }}
+                                            </TableCell>
+
+                                            <TableCell>
                                                 {{ item.facility || '-' }}
                                             </TableCell>
 
@@ -255,7 +274,7 @@ const displayValue = (value: string | number | null) => value ?? '-'
                                         </TableRow>
 
                                         <TableRow v-if="!purchaseOrder.items?.length">
-                                            <TableCell colspan="7" class="py-10 text-center text-muted-foreground">
+                                            <TableCell colspan="8" class="py-10 text-center text-muted-foreground">
                                                 No items found.
                                             </TableCell>
                                         </TableRow>
@@ -266,7 +285,7 @@ const displayValue = (value: string | number | null) => value ?? '-'
                                     <TableFooter>
 
                                         <TableRow>
-                                            <TableCell colspan="6" class="text-right font-semibold">
+                                            <TableCell colspan="7" class="text-right font-semibold">
                                                 Grand Total
                                             </TableCell>
 

@@ -14,8 +14,12 @@ return new class extends Migration
         Schema::create('shipment_containers', function (Blueprint $table) {
             $table->id();
             $table->foreignId('shipment_id')->constrained('shipments')->onDelete('cascade');
-            $table->string('container_number');
-            $table->string('container_size');
+            $table->foreignId('purchase_order_item_id')->constrained('purchase_order_items')->onDelete('cascade');
+            $table->string('product_code', 100);
+            $table->decimal('quantity', 12, 2);
+            $table->string('container_type')->nullable();
+            $table->string('container_number')->nullable();
+            $table->string('container_size')->nullable();
             $table->string('seal_number')->nullable();
             $table->decimal('gross_weight', 10, 2)->nullable();
             $table->decimal('net_weight', 10, 2)->nullable();

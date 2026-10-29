@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PurchaseOrderItems extends Model
 {
@@ -14,6 +15,10 @@ class PurchaseOrderItems extends Model
         'product_name',
         'hs_code',
         'quantity',
+        'backorder_qty',
+        'remaining_qty',
+        'total_allocated',
+        'unit_price',
         'unit',
         'facility',
         'import_duty',
@@ -24,5 +29,28 @@ class PurchaseOrderItems extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Products::class);
+    }
+
+    public function purchaseOrder(): BelongsTo
+    {
+        return $this->belongsTo(PurchaseOrders::class);
+    }
+
+    public function getRemainingQuantityAttribute(): float
+    {
+        return max(
+            0,
+            (float) ($this->getAttribute('remaining_qty') ?? $this->getAttribute('quantity') ?? 0)
+        );
+    }
+
+    public function getRemainingQuantityFormattedAttribute(): string
+    {
+        return number_format($this->remaining_quantity, 2);
+    }
+
+    public function shipmentAllocations(): HasMany
+    {
+        return $this->hasMany(ShipmentContainers::class, 'purchase_order_item_id');
     }
 }

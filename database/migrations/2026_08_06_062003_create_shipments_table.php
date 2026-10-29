@@ -15,10 +15,12 @@ return new class extends Migration
             $table->id();
             $table->string('shipment_number')->unique();
             $table->foreignId('forwarder_id')->constrained('forwarders')->onDelete('cascade')->nullable;
+            $table->foreignId('purchase_orders_id')->constrained('purchase_orders')->onDelete('cascade')->nullable;
             $table->foreignId('shipping_line_id')->constrained('shipping_lines')->onDelete('cascade')->nullable;
             $table->foreignId('port_of_loading_id')->constrained('ports')->onDelete('cascade')->nullable;
             $table->foreignId('port_of_discharge_id')->constrained('ports')->onDelete('cascade')->nullable;
             $table->foreignId('warehouse_id')->constrained('warehouses')->onDelete('cascade')->nullable;
+            $table->string('invoice_number')->nullable();
             $table->string('bl_number')->nullable();
             $table->string('vessel_name')->nullable();
             $table->string('voyage_number')->nullable();

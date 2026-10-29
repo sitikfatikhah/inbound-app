@@ -30,6 +30,11 @@ class ShipmentRequest extends FormRequest
                 'string',
                 'max:50',
             ],
+            'invoice_number' => [
+                'nullable',
+                'string',
+                'max:50',
+            ],
 
             'forwarder_id' => [
                 'nullable',
@@ -74,6 +79,13 @@ class ShipmentRequest extends FormRequest
             'atd' => ['nullable', 'date'],
             'ata' => ['nullable', 'date'],
 
+            'milestones' => ['sometimes', 'array'],
+            'milestones.*.milestone_name' => ['required', 'string', 'max:255'],
+            'milestones.*.status' => ['required', 'in:Planned,In Progress,Completed'],
+            'milestones.*.planned_date' => ['nullable', 'date'],
+            'milestones.*.actual_date' => ['nullable', 'date'],
+            'milestones.*.remarks' => ['nullable', 'string'],
+
             'status_document' => [
                 'nullable',
                 'string',
@@ -81,6 +93,50 @@ class ShipmentRequest extends FormRequest
             ],
 
             'tracking_status' => ['nullable', 'string', 'max:255'],
+
+            'purchase_order_ids' => ['sometimes', 'array'],
+            'purchase_order_ids.*' => ['integer', 'distinct', 'exists:purchase_orders,id'],
+
+            'containers' => $this->isMethod('POST')
+                ? ['required', 'array', 'min:1']
+                : ['sometimes', 'array', 'min:1'],
+
+            'containers.*.container_number' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
+            'containers.*.container_seal_number' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
+            'containers.*.items' => [
+                'required',
+                'array',
+                'min:1',
+            ],
+
+            'containers.*.items.*.purchase_order_id' => [
+                'required',
+                'integer',
+                'exists:purchase_orders,id',
+            ],
+
+            'containers.*.items.*.purchase_order_item_id' => [
+                'required',
+                'integer',
+                'exists:purchase_order_items,id',
+                'distinct',
+            ],
+
+            'containers.*.items.*.quantity' => [
+                'required',
+                'numeric',
+                'gt:0',
+            ],
 
             'location' => ['nullable', 'string', 'max:255'],
             'country' => ['nullable', 'string', 'max:255'],

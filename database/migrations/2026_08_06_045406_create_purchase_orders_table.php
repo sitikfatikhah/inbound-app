@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('purchase_orders', function (Blueprint $table) {
             $table->id();
             $table->foreignId('supplier_id')->constrained('Suppliers')->cascadeOnDelete();
-            $table->string('category')->nullable();
             $table->string('po_number', 100);
+            $table->string('category')->nullable();
             $table->dateTime('po_date');
             $table->string('currency', 10)->nullable();
             $table->decimal('exchange_rate', 10, 2)->nullable();

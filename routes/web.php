@@ -5,6 +5,7 @@ use App\Http\Controllers\CustomsController;
 use App\Http\Controllers\CustomsPaymentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ForwarderController;
+use App\Http\Controllers\LocalShipmentsController;
 use App\Http\Controllers\PortController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PurchaseOrderController;
@@ -20,8 +21,8 @@ use Inertia\Inertia;
 
 Route::inertia('/', 'Welcome')->name('home'); //
 Route::inertia('/landing/login', 'landing/login')->name('landing-login');
-Route::inertia('/arrival-schedule', 'tracking/schedule')->name('arrival-schedule');
-Route::inertia('/arrival-warehouse', 'tracking/warehouse')->name('warehouse');
+Route::get('/arrival-schedule', [TrackingController::class, 'schedule'])->name('arrival-schedule');
+Route::get('/arrival-warehouse', [TrackingController::class, 'warehouse'])->name('warehouse');
 Route::get('/project', [TrackingController::class, 'project'])->name('project-monitoring');
 Route::get('/knowledge-mgm', [TrackingController::class, 'knowledge'])->name('knowledge-mgm');
 Route::get('/analytics', [TrackingController::class, 'analytics'])->name('analytics');
@@ -56,7 +57,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::prefix('users')
     ->name('Users.')
     ->controller(UserController::class)
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth', ' verified'])
     ->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/create', 'create')->name('create');
@@ -88,6 +89,40 @@ Route::prefix('shipments')
         Route::put('/{shipment}', 'update')->name('update');
         Route::delete('/{shipment}', 'destroy')->name('destroy');
     });
+Route::prefix('local-shipment')
+    ->name('local-shipment.')
+    ->controller(LocalShipmentsController::class)
+    ->middleware(['auth', 'verified'])
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/create', 'create')->name('create');
+        Route::get('/{local_shipment}', 'show')
+            ->whereNumber('local_shipment')
+            ->name('show');
+        Route::get('/{local_shipment}/edit', 'edit')
+            ->whereNumber('local_shipment')
+            ->name('edit');
+        Route::post('/', 'store')->name('store');
+        Route::put('/{local_shipment}', 'update')->name('update');
+        Route::delete('/{local_shipment}', 'destroy')->name('destroy');
+    });
+// Route::prefix('local-delivery')
+//     ->name('local_delivery.')
+//     ->controller(LocalDeliveryController::class)
+//     ->middleware(['auth', 'verified'])
+//     ->group(function () {
+//         Route::get('/', 'index')->name('index');
+//         Route::get('/create', 'create')->name('create');
+//         Route::get('/{local_delivery}', 'show')
+//             ->whereNumber('local_delivery')
+//             ->name('show');
+//         Route::get('/{local_delivery}/edit', 'edit')
+//             ->whereNumber('local_delivery')
+//             ->name('edit');
+//         Route::post('/', 'store')->name('store');
+//         Route::put('/{local_delivery}', 'update')->name('update');
+//         Route::delete('/{local_delivery}', 'destroy')->name('destroy');
+//     });
 
 Route::prefix('forwarders')
     ->name('forwarders.')
@@ -214,5 +249,17 @@ Route::prefix('suppliers')
         Route::put('/{supplier}', 'update')->name('update');
         Route::delete('/{supplier}', 'destroy')->name('destroy');
     });
-
+Route::prefix('tracking-status')
+    ->name('tracking-status.')
+    ->controller('App\\Http\\Controllers\\TrackingStatusController')
+    ->middleware(['auth', 'verified'])
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/create', 'create')->name('create');
+        Route::get('/{status}', 'show')->whereNumber('status')->name('show');
+        Route::get('/{status}/edit', 'edit')->whereNumber('status')->name('edit');
+        Route::post('/', 'store')->name('store');
+        Route::put('/{status}', 'update')->name('update');
+        Route::delete('/{status}', 'destroy')->name('destroy');
+    });
 require __DIR__.'/settings.php';

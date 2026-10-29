@@ -3,8 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\KnowledgeArticles;
-use App\Models\ProductProjects;
+use App\Models\LocalShipments;
 use App\Models\PurchaseOrders;
+use App\Models\ShipmentContainers;
 use App\Models\Shipments;
 use App\Models\Tracking;
 use App\Models\WarehouseReceipts;
@@ -36,10 +37,16 @@ class TrackingController extends Controller
     public function local()
     {
         return Inertia::render('tracking/local', [
-            'purchaseOrders' => PurchaseOrders::with([
-                'supplier',
-                'items',
-            ])->latest()->get(),
+            'localShipments' => LocalShipments::query()
+                ->with([
+                    'purchaseOrder:id,po_number,supplier_id,po_date,delivery_date,arrival_date,category,status',
+                    'purchaseOrder.supplier:id,supplier_name,country',
+                    'warehouse:id,warehouse_name',
+                    'milestones' => fn ($query) => $query->orderBy('planned_date')->orderBy('id'),
+                ])
+                ->whereHas('purchaseOrder', fn ($query) => $query->whereRaw('LOWER(category) = ?', ['local']))
+                ->latest()
+                ->get(),
         ]);
     }
 
@@ -47,11 +54,11 @@ class TrackingController extends Controller
     {
         return Inertia::render('tracking/schedule', [
             'shipments' => Shipments::with([
-                'forwarder:id,forwarder_name',
-                'shippingLine:id,shipping_line_name',
                 'portOfLoading:id,port_name',
                 'portOfDischarge:id,port_name',
-                'warehouse:id,warehouse_name',
+                'purchaseOrders:id,po_number',
+                'purchaseOrders.items:id,purchase_order_id,product_id',
+                'purchaseOrders.items.product:id,category',
             ])->whereNotNull('eta')->orderBy('eta')->get(),
         ]);
     }
@@ -77,10 +84,41 @@ class TrackingController extends Controller
     public function project()
     {
         return Inertia::render('tracking/project', [
-            'projects' => ProductProjects::with([
-                'product:id,product_name',
-                'shipment:id,shipment_number',
-            ])->latest()->get(),
+            'projects' => ShipmentContainers::query()
+                ->with([
+                    'shipment:id,shipment_number,etd,eta,ata,tracking_status',
+                    'purchaseOrderItem:id,product_id,product_name',
+                    'purchaseOrderItem.product:id,product_name,category',
+                ])
+                ->whereHas('purchaseOrderItem.product', fn ($query) => $query->whereRaw('LOWER(category) = ?', ['sample']))
+                ->latest()
+                ->get()
+                ->map(function (ShipmentContainers $shipmentItem): array {
+                    $product = $shipmentItem->purchaseOrderItem?->product;
+                    $shipment = $shipmentItem->shipment;
+                    $isCompleted = $shipment?->ata || preg_match('/complete|delivered|arrived/i', $shipment?->tracking_status ?? '');
+
+                    return [
+                        'id' => $shipmentItem->id,
+                        'project_name' => $product?->product_name ?? $shipmentItem->purchaseOrderItem?->product_name ?? $shipmentItem->product_code,
+                        'description' => $product?->category,
+                        'start_date' => $shipment?->etd?->format('Y-m-d'),
+                        'target_date' => $shipment?->eta?->format('Y-m-d'),
+                        'pic' => null,
+                        'progress' => $isCompleted ? 'Completed' : ($shipment?->tracking_status ? 'In Progress' : 'Not Started'),
+                        'quantity' => (float) $shipmentItem->quantity,
+                        'product' => [
+                            'product_name' => $product?->product_name ?? $shipmentItem->purchaseOrderItem?->product_name,
+                            'category' => $product?->category,
+                        ],
+                        'shipment' => $shipment ? [
+                            'id' => $shipment->id,
+                            'shipment_number' => $shipment->shipment_number,
+                            'tracking_status' => $shipment->tracking_status,
+                        ] : null,
+                    ];
+                })
+                ->values(),
         ]);
     }
 
