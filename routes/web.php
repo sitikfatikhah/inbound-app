@@ -13,6 +13,7 @@ use App\Http\Controllers\ShipmentController;
 use App\Http\Controllers\ShippingLineController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\TrackingController;
+use App\Http\Controllers\TrackingStatusController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WarehouseController;
 use App\Models\ActivityLog;
@@ -251,15 +252,15 @@ Route::prefix('suppliers')
     });
 Route::prefix('tracking-status')
     ->name('tracking-status.')
-    ->controller('App\\Http\\Controllers\\TrackingStatusController')
+    ->controller(TrackingStatusController::class)
     ->middleware(['auth', 'verified'])
     ->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/create', 'create')->name('create');
-        Route::get('/{status}', 'show')->whereNumber('status')->name('show');
-        Route::get('/{status}/edit', 'edit')->whereNumber('status')->name('edit');
+        Route::get('/{tracking_status}', 'show')->whereNumber('tracking_status')->name('show');
+        Route::get('/{tracking_status}/edit', 'edit')->whereNumber('tracking_status')->name('edit');
         Route::post('/', 'store')->name('store');
-        Route::put('/{status}', 'update')->name('update');
-        Route::delete('/{status}', 'destroy')->name('destroy');
+        Route::put('/{tracking_status}', 'update')->name('update');
+        Route::delete('/{tracking_status}', 'destroy')->name('destroy');
     });
 require __DIR__.'/settings.php';

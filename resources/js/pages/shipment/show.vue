@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3'
 import { ArrowLeft, Pencil } from 'lucide-vue-next'
+import { computed } from 'vue'
+import AllocatedPurchaseOrderItems from '@/components/shipment/AllocatedPurchaseOrderItems.vue'
+import ShipmentMilestonesTable from '@/components/shipment/ShipmentMilestonesTable.vue'
+import ShipmentStatusHistory from '@/components/shipment/ShipmentStatusHistory.vue'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 
 interface Related { id: number | string;[key: string]: string | number }
@@ -13,6 +18,17 @@ interface History {
     location: string | null; 
     country: string | null; 
     remarks: string | null }
+interface ShipmentContainer {
+    id: number | string;
+    container_number: string | null;
+    product_code: string | null;
+    quantity: number | string;
+    purchase_order_item?: {
+        product_code: string | null;
+        product_name: string | null;
+        unit: string | null;
+    } | null;
+}
 interface Shipment {
     id: number | string; 
     shipment_number: string | null; 
@@ -33,13 +49,24 @@ interface Shipment {
     status_document: string | null; 
     tracking_status: string | null; 
     milestones?: Milestone[]; 
-    status_histories?: History[]
+    status_histories?: History[];
+    shipment_containers?: ShipmentContainer[];
 }
 const props = defineProps<{ shipment: Shipment }>()
+const allocatedItems = computed(() =>
+    (props.shipment.shipment_containers ?? []).map((container) => ({
+        id: container.id,
+        product_code:
+            container.purchase_order_item?.product_code ??
+            container.product_code,
+        product_name: container.purchase_order_item?.product_name ?? null,
+        quantity: container.quantity,
+        unit: container.purchase_order_item?.unit ?? null,
+        container_number: container.container_number,
+    })),
+)
 const dateLabel = (value: string | null) => value?.slice(0, 10) ?? '-'
-const dateTimeLabel = (value: string | null) => value ? value.replace('T', ' ').slice(0, 16) : '-'
 const label = (value: string | null) => value ? value.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()) : '-'
-const statusClass = (value: string | null) => ['completed', 'delivered'].includes(value?.toLowerCase() ?? '') ? 'bg-green-100 text-green-700' : ['cancelled'].includes(value?.toLowerCase() ?? '') ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
 </script>
 
 <template>
@@ -89,8 +116,10 @@ const statusClass = (value: string | null) => ['completed', 'delivered'].include
                 </div>
                 <div>
                     <dt>Status Document</dt>
-                    <dd><span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium"
-                            :class="statusClass(shipment.status_document)">{{ label(shipment.status_document) }}</span>
+                    <dd>
+                        <Badge variant="outline">
+                            {{ label(shipment.status_document) }}
+                        </Badge>
                     </dd>
                 </div>
                 <div>
@@ -143,125 +172,14 @@ const statusClass = (value: string | null) => ['completed', 'delivered'].include
             </dl>
         </section>
         
-        <section class="rounded-lg border bg-card">
-            <div class="border-b p-6">
-                <h2 class="font-semibold">Milestones</h2>
-                <p class="mt-1 text-sm text-muted-foreground">
-                    Planned and actual shipment activities.
-                </p>
-            </div>
+        <AllocatedPurchaseOrderItems
+            :items="allocatedItems"
+            description="Items allocated to this shipment, grouped by container."
+        />
 
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm">
-                    <thead>
-                        <tr class="border-b bg-muted/30">
-                            <th class="p-4">Milestone</th>
-                            <th class="p-4">Planned Date</th>
-                            <th class="p-4">Actual Date</th>
-                            <th class="p-4">Status</th>
-                            <th class="p-4">Remarks</th>
-                        </tr>
-                    </thead>
+        <ShipmentMilestonesTable :milestones="shipment.milestones ?? []" />
 
-                    <tbody>
-                        <tr
-                            v-for="milestone in shipment.milestones ?? []"
-                            :key="milestone.id"
-                            class="border-b last:border-0"
-                        >
-                            <td class="p-4 font-medium">
-                                {{ milestone.milestone_name || '-' }}
-                            </td>
-
-                            <td class="p-4">
-                                {{ dateLabel(milestone.planned_date) }}
-                            </td>
-
-                            <td class="p-4">
-                                {{ dateLabel(
-                                    milestone.actual_date ??
-                                    milestone.milestone_date
-                                ) }}
-                            </td>
-
-                            <td class="p-4">
-                                <span
-                                    class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium"
-                                    :class="statusClass(milestone.status)"
-                                >
-                                    {{ label(milestone.status) }}
-                                </span>
-                            </td>
-
-                            <td class="p-4">
-                                {{ milestone.remarks || '-' }}
-                            </td>
-                        </tr>
-
-                        <tr v-if="!shipment.milestones?.length">
-                            <td
-                                colspan="5"
-                                class="p-6 text-center text-muted-foreground"
-                            >
-                                No milestones recorded.
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
-        
-        <section class="rounded-lg border bg-card">
-            <div class="border-b p-6">
-                <h2 class="font-semibold">Status History</h2>
-                <p class="mt-1 text-sm text-muted-foreground">
-                    Chronological record of shipment status changes.
-                </p>
-            </div>
-
-            <div
-                v-if="shipment.status_histories?.length"
-                class="divide-y"
-            >
-                <div
-                    v-for="history in shipment.status_histories"
-                    :key="history.id"
-                    class="grid gap-3 p-6 md:grid-cols-[180px_1fr]"
-                >
-                    <div class="text-sm text-muted-foreground">
-                        {{ dateTimeLabel(history.status_date) }}
-                    </div>
-
-                    <div class="space-y-1">
-                        <p class="font-medium">
-                            {{ label(history.status) }}
-                        </p>
-
-                        <p class="text-sm text-muted-foreground">
-                            {{
-                                [history.location, history.country]
-                                    .filter(Boolean)
-                                    .join(', ') || 'Location not recorded'
-                            }}
-                        </p>
-
-                        <p
-                            v-if="history.remarks"
-                            class="text-sm"
-                        >
-                            {{ history.remarks }}
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <p
-                v-else
-                class="p-6 text-center text-muted-foreground"
-            >
-                No status history recorded.
-            </p>
-        </section>
+        <ShipmentStatusHistory :histories="shipment.status_histories ?? []" />
 
     </div>
 </template>

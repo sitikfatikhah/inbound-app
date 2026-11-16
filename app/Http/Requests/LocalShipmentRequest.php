@@ -25,8 +25,8 @@ class LocalShipmentRequest extends FormRequest
                 'max:50',
                 Rule::unique('local_shipments', 'shipment_number')->ignore($shipment),
             ],
-            'purchase_orders_id' => [
-                'required',
+            'purchase_order_id' => [
+                'nullable',
                 'integer',
                 Rule::exists('purchase_orders', 'id')
                     ->where(fn ($query) => $query->whereRaw('LOWER(category) = ?', ['local'])),
@@ -38,12 +38,17 @@ class LocalShipmentRequest extends FormRequest
             'status_document' => ['required', 'string', 'max:255'],
             'tracking_status' => ['required', 'string', 'max:255'],
             'remarks' => ['nullable', 'string'],
-            'milestones' => ['sometimes', 'array'],
-            'milestones.*.milestone_name' => ['required', 'string', 'max:255'],
-            'milestones.*.status' => ['required', 'in:Planned,In Progress,Completed'],
-            'milestones.*.planned_date' => ['nullable', 'date'],
-            'milestones.*.actual_date' => ['nullable', 'date'],
-            'milestones.*.remarks' => ['nullable', 'string'],
+            'items' => $this->isMethod('POST')
+                ? ['required', 'array', 'min:1']
+                : ['sometimes', 'array', 'min:1'],
+            'items.*.purchase_order_id' => [
+                'required',
+                'integer',
+                Rule::exists('purchase_orders', 'id')
+                    ->where(fn ($query) => $query->whereRaw('LOWER(category) = ?', ['local'])),
+            ],
+            'items.*.purchase_order_item_id' => ['required', 'integer', 'exists:purchase_order_items,id'],
+            'items.*.quantity' => ['required', 'numeric', 'gt:0'],
         ];
     }
 }

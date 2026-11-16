@@ -1,17 +1,28 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import {
     edit,
     index,
 } from '@/actions/App/Http/Controllers/LocalShipmentsController';
+import AllocatedPurchaseOrderItems from '@/components/shipment/AllocatedPurchaseOrderItems.vue';
+import ShipmentStatusHistory from '@/components/shipment/ShipmentStatusHistory.vue';
 
-interface Milestone {
+interface StatusHistory {
     id: number;
-    milestone_name: string;
-    status: 'Planned' | 'In Progress' | 'Completed';
-    planned_date: string | null;
-    actual_date: string | null;
-    remarks: string | null;
+    status_type: 'document' | 'shipment';
+    status: string;
+    status_date: string;
+}
+
+interface LocalShipmentItem {
+    id: number;
+    quantity: number;
+    purchase_order_item: {
+        product_code: string;
+        product_name: string;
+        unit: string | null;
+    };
 }
 
 interface LocalShipment {
@@ -23,15 +34,40 @@ interface LocalShipment {
     status_document: string | null;
     tracking_status: string | null;
     remarks: string | null;
+    purchase_orders: Array<{
+        po_number: string;
+        supplier?: { supplier_name: string } | null;
+    }>;
     purchase_order?: {
         po_number: string;
         supplier?: { supplier_name: string } | null;
     } | null;
     warehouse?: { warehouse_name: string } | null;
-    milestones: Milestone[];
+    status_histories: StatusHistory[];
+    items: LocalShipmentItem[];
+}
+interface AllocatedItem {
+    id: number | string;
+    product_code: string | null;
+    product_name: string | null;
+    quantity: number | string;
+    unit: string | null;
+    container_number?: string | null;
 }
 
-const { localShipment } = defineProps<{ localShipment: LocalShipment }>();
+const { localShipment } = defineProps<{
+    localShipment: LocalShipment;
+}>();
+
+const allocatedItems = computed<AllocatedItem[]>(() =>
+    (localShipment.items ?? []).map((item) => ({
+        id: item.id,
+        product_code: item.purchase_order_item?.product_code ?? null,
+        product_name: item.purchase_order_item?.product_name ?? null,
+        quantity: item.quantity,
+        unit: item.purchase_order_item?.unit ?? null,
+    })),
+);
 
 function dateLabel(value: string | null): string {
     if (!value) {
@@ -42,27 +78,17 @@ function dateLabel(value: string | null): string {
         day: '2-digit',
         month: 'short',
         year: 'numeric',
-        timeZone: 'UTC',
+        hour: '2-digit',
+        minute: '2-digit',
     }).format(new Date(value));
 }
 
-function milestoneClass(status: string): string {
-    if (status === 'Completed') {
-        return 'bg-emerald-500/10 text-emerald-700';
-    }
-
-    if (status === 'In Progress') {
-        return 'bg-amber-500/10 text-amber-700';
-    }
-
-    return 'bg-muted text-muted-foreground';
-}
 </script>
 
 <template>
     <Head :title="localShipment.shipment_number" />
 
-    <main class="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-8">
+    <main class="mx-auto w-full space-y-6 p-4 sm:p-8">
         <header class="flex flex-wrap items-end justify-between gap-4">
             <div class="space-y-2">
                 <Link
@@ -74,7 +100,7 @@ function milestoneClass(status: string): string {
                     {{ localShipment.shipment_number }}
                 </h1>
                 <p class="text-sm text-muted-foreground">
-                    Detail pengiriman lokal dan progres milestone.
+                    Detail pengiriman lokal dan riwayat status.
                 </p>
             </div>
             <Link
@@ -92,15 +118,14 @@ function milestoneClass(status: string): string {
                         Purchase order
                     </dt>
                     <dd class="mt-1 font-medium">
-                        {{ localShipment.purchase_order?.po_number || '-' }}
+                        {{ localShipment.purchase_orders.map((purchaseOrder) => purchaseOrder.po_number).join(', ') || localShipment.purchase_order?.po_number || '-' }}
                     </dd>
                 </div>
                 <div>
                     <dt class="text-xs text-muted-foreground">Vendor</dt>
                     <dd class="mt-1 font-medium">
                         {{
-                            localShipment.purchase_order?.supplier
-                                ?.supplier_name || '-'
+                            localShipment.purchase_orders.map((purchaseOrder) => purchaseOrder.supplier?.supplier_name).filter(Boolean).join(', ') || localShipment.purchase_order?.supplier?.supplier_name || '-'
                         }}
                     </dd>
                 </div>
@@ -155,59 +180,15 @@ function milestoneClass(status: string): string {
             </dl>
         </section>
 
-        <section class="overflow-hidden rounded-xl border bg-card">
-            <div class="border-b p-5">
-                <h2 class="font-semibold">Milestone</h2>
-                <p class="mt-1 text-sm text-muted-foreground">
-                    Planned date, actual date, status, dan catatan kegiatan.
-                </p>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full min-w-[700px] text-left text-sm">
-                    <thead class="border-b bg-muted/40 text-muted-foreground">
-                        <tr>
-                            <th class="p-4 font-medium">Milestone</th>
-                            <th class="p-4 font-medium">Planned date</th>
-                            <th class="p-4 font-medium">Actual date</th>
-                            <th class="p-4 font-medium">Status</th>
-                            <th class="p-4 font-medium">Catatan</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr
-                            v-for="milestone in localShipment.milestones"
-                            :key="milestone.id"
-                            class="border-b last:border-0"
-                        >
-                            <td class="p-4 font-medium">
-                                {{ milestone.milestone_name }}
-                            </td>
-                            <td class="p-4">
-                                {{ dateLabel(milestone.planned_date) }}
-                            </td>
-                            <td class="p-4">
-                                {{ dateLabel(milestone.actual_date) }}
-                            </td>
-                            <td class="p-4">
-                                <span
-                                    class="rounded-full px-2.5 py-1 text-xs font-medium"
-                                    :class="milestoneClass(milestone.status)"
-                                    >{{ milestone.status }}</span
-                                >
-                            </td>
-                            <td class="p-4">{{ milestone.remarks || '-' }}</td>
-                        </tr>
-                        <tr v-if="!localShipment.milestones.length">
-                            <td
-                                colspan="5"
-                                class="p-8 text-center text-muted-foreground"
-                            >
-                                Belum ada milestone.
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
+        <AllocatedPurchaseOrderItems
+            :items="allocatedItems"
+            description="Purchase order items allocated to this shipment"
+        />
+
+        <ShipmentStatusHistory
+            :histories="localShipment.status_histories"
+            description="Riwayat status dokumen dan shipment, berurutan berdasarkan waktu."
+            empty-message="Belum ada riwayat status."
+        />
     </main>
 </template>

@@ -62,7 +62,6 @@ class TrackingStatusSeeder extends Seeder
                     ],
                     [
                         'name' => $name,
-                        'sort_order' => $index + 1,
                         'is_active' => true,
                     ]
                 );

@@ -1,17 +1,10 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
 import { ArrowLeft, Plus, Trash2 } from 'lucide-vue-next'
+import { computed } from 'vue'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-    Tabs,
-    TabsContent,
-    TabsList,
-    TabsTrigger,
-} from '@/components/ui/tabs'
-
 import {
     Table,
     TableBody,
@@ -21,6 +14,12 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table'
+import {
+    Tabs,
+    TabsContent,
+    TabsList,
+    TabsTrigger,
+} from '@/components/ui/tabs'
 
 interface Suppliers {
     id: number | string
@@ -47,6 +46,7 @@ interface PurchaseOrderItemFromBackend {
     hs_code?: string | null
     import_duty?: number | string | null
     facility?: string | null
+    total_price: number | string | null
     unit_price: number | string | null
     product?: Product | null
 }
@@ -108,7 +108,10 @@ const mapItem = (
 ): PurchaseOrderItemForm => {
     const product = item.product
     const quantity = Number(item.quantity ?? 0)
-    const unitPrice = Number(item.unit_price ?? 0)
+    const unitPrice = quantity
+        ? Number(item.total_price ?? 0) / quantity
+        : 0
+
     return {
         id: item.id,
         product_id: item.product_id ?? null,
@@ -119,8 +122,8 @@ const mapItem = (
         hs_code: item.hs_code ?? product?.hs_code ?? '',
         import_duty: Number(item.import_duty ?? product?.import_duty ?? 0),
         facility: item.facility ?? product?.facility ?? '',
-        unit_price: item.unit_price ?? 0,
-        total_price: quantity * unitPrice,
+        total_price: item.total_price ?? 0,
+        unit_price: unitPrice,
     }
 }
 /**
@@ -254,11 +257,11 @@ const calculateItemTotal = (
     const quantity =
         Number(item.quantity || 0)
 
-    const unitPrice =
-        Number(item.unit_price || 0)
+    const total_price =
+        Number(item.total_price || 0)
 
-    item.total_price =
-        quantity * unitPrice
+    item.unit_price =
+        quantity > 0 ? total_price / quantity : 0
 }
 
 /**
@@ -508,6 +511,7 @@ const handleSubmit = () => {
                         </label>
 
                         <select v-model="form.category"
+                            required
                             class="flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm">
                             <option value="">
                                 Select category
@@ -660,6 +664,10 @@ const handleSubmit = () => {
                                     <p class="text-sm text-muted-foreground">
                                         Add products included in this purchase order.
                                     </p>
+
+                                    <p v-if="form.errors.items" class="text-sm text-destructive">
+                                        {{ form.errors.items }}
+                                    </p>
                                 </div>
 
                                 <Button type="button" variant="outline" @click="addItem">
@@ -699,13 +707,13 @@ const handleSubmit = () => {
                                             </TableHead>
 
                                             <TableHead>
-                                                Unit Price
-                                            </TableHead>
-
-                                            <TableHead>
                                                 Total Price
                                             </TableHead>
-
+                                            
+                                            <TableHead>
+                                                Unit Price
+                                            </TableHead>
+                                            
                                             <TableHead class="w-[60px]">
                                                 Action
                                             </TableHead>
@@ -720,7 +728,7 @@ const handleSubmit = () => {
                                                 ">
                                             <!-- Product -->
                                             <TableCell>
-                                                <select v-model="item.product_id" @change="selectProduct(item)"
+                                                <select v-model="item.product_id" required @change="selectProduct(item)"
                                                     class="flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm">
                                                     <option value="">
                                                         Select Product
@@ -733,14 +741,23 @@ const handleSubmit = () => {
                                                         {{ product.product_name }}
                                                     </option>
                                                 </select>
+
+                                                <p v-if="form.errors[`items.${index}.product_id`]"
+                                                    class="mt-1 text-xs text-destructive">
+                                                    {{ form.errors[`items.${index}.product_id`] }}
+                                                </p>
                                             </TableCell>
 
                                             <!-- Quantity -->
                                             <TableCell>
                                                 <Input v-model.number="item.quantity
-                                                    " type="number" min="0.01" step="0.01" class="w-24" @input="
+                                                    " type="number" min="0.01" step="0.01" required class="w-24" @input="
                                                         calculateItemTotal(item)
                                                         " />
+                                                <p v-if="form.errors[`items.${index}.quantity`]"
+                                                    class="mt-1 text-xs text-destructive">
+                                                    {{ form.errors[`items.${index}.quantity`] }}
+                                                </p>
                                             </TableCell>
 
                                             <!-- Unit -->
@@ -773,28 +790,24 @@ const handleSubmit = () => {
                                                 </div>
                                             </TableCell>
 
-                                            <!-- Unit Price -->
-                                            <TableCell>
-                                                <Input v-model.number="item.unit_price
-                                                    " type="number" min="0" step="0.01" class="w-32" @input="
-                                                        calculateItemTotal(
-                                                            item
-                                                        )
-                                                        " />
-                                            </TableCell>
-
                                             <!-- Total -->
                                             <TableCell>
-                                                <div
-                                                    class="flex h-10 w-32 items-center rounded-md border bg-muted px-3 text-sm">
-                                                    {{
-                                                        Number(
-                                                            item.total_price ||
-                                                            0
-                                                        ).toLocaleString(
-                                                            'id-ID'
-                                                        )
-                                                    }}
+                                                <Input v-model.number="item.total_price" type="number" min="0" step="0.01" required class="w-32" @input="
+                                                    calculateItemTotal(
+                                                        item
+                                                    )
+                                                    " />
+                                                <p v-if="form.errors[`items.${index}.total_price`]"
+                                                    class="mt-1 text-xs text-destructive">
+                                                    {{ form.errors[`items.${index}.total_price`] }}
+                                                </p>
+                                            </TableCell>
+
+                                            
+                                            <!-- Unit Price -->
+                                            <TableCell>
+                                                <div class="flex items-center gap-1">  
+                                                    {{ item.unit_price.toLocaleString('id-ID') }}
                                                 </div>
                                             </TableCell>
 

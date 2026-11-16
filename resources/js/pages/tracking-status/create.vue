@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { index } from '@/actions/App/Http/Controllers/TrackingStatusController';
+import { index, store } from '@/actions/App/Http/Controllers/TrackingStatusController';
 import Button from '@/components/ui/button/Button.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,16 +10,20 @@ const form = useForm({
     category: '',
     code: '',
     name: '',
-    sort_order: '',
-    is_active: false as boolean,
+    is_active: true,
 });
 
 const handleSubmit = () => {
-    form.post('status', {
-        onSuccess: () => {console.log('Status berhasil disimpan');},
-        onError: (errors) => {console.log('Validation errors:', errors);},
+    form.post('/tracking-status', {
+        onSuccess: () => {
+            console.log('Product berhasil disimpan');
+        },
+        onError: (errors) => {
+            console.log('Validation errors:', errors);
+        },
     });
 }
+
 </script>
 
 <template>
@@ -41,15 +45,24 @@ const handleSubmit = () => {
                 <div class="grid grid-cols-2 gap-4 rounded-lg border bg-card p-4">
                     <div class="space-y-2">
                         <Label for="form" class="text-sm font-medium">Category</label>
-                        <Input v-model="form.category"/>                    
+                        <Input v-model="form.category"/>
+                         <p v-if="form.errors.category" class="text-sm text-red-500">
+                            {{ form.errors.category }}
+                        </p>                
                     </div>
                     <div class="space-y-2">
                         <Label for="form" class="text-sm font-medium">Code</label>
-                        <Input v-model="form.code"/>                    
+                        <Input v-model="form.code"/>
+                         <p v-if="form.errors.code" class="text-sm text-red-500">
+                            {{ form.errors.code }}
+                        </p>                    
                     </div>
                     <div class="space-y-2">
                         <Label for="form" class="text-sm font-medium">Name</label>
-                        <Input v-model="form.name"/>                    
+                        <Input v-model="form.name"/>
+                        <p v-if="form.errors.name" class="text-sm text-red-500">
+                            {{ form.errors.name }}
+                        </p>                   
                     </div>
                     <div class="space-y-2">
                         <Label for="form" class="text-sm font-medium">Active</Label>
@@ -61,15 +74,13 @@ const handleSubmit = () => {
                         />
                     </div>
                     <div class="gap-4 p-4">
-                        <Button type="submit" variant="outline" as-child>
-                            <Link :index.url()>Cancel</Link>
+                        <Button type="button" variant="outline" as-child>
+                            <Link :href=index.url()>Cancel</Link>
                         </Button>
                     </div>
-                    <form>
-                        <Button type="submit" :disabled="form.processing">
-                            {{ form.processing ? 'saving..' : 'Save Status'}}
-                        </Button>
-                    </form>
+                    <Button type="submit" :disabled="form.processing">
+                        {{ form.processing ? 'saving..' : 'Save Status'}}
+                    </Button>
                 </div>
             </Form>
         </Section>

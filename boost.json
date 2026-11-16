@@ -15,6 +15,9 @@
         "pest-testing",
         "inertia-vue-development",
         "tailwindcss-development",
-        "laravel-inertia-vue"
+        "laravel-inertia-vue",
+        "laravel-security",
+        "laravel-specialist",
+        "php-pro"
     ]
 }

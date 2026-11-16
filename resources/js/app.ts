@@ -7,7 +7,7 @@ import { initializeFlashToast } from '@/lib/flashToast';
 import { createApp, h, DefineComponent } from 'vue';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'Inbound-SCM';
 
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),

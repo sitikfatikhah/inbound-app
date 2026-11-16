@@ -92,7 +92,7 @@ class ShipmentRequest extends FormRequest
                 'max:255',
             ],
 
-            'tracking_status' => ['nullable', 'string', 'max:255'],
+            'tracking_statuses' => ['nullable', 'string', 'max:255'],
 
             'purchase_order_ids' => ['sometimes', 'array'],
             'purchase_order_ids.*' => ['integer', 'distinct', 'exists:purchase_orders,id'],

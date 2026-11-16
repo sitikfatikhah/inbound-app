@@ -88,7 +88,7 @@ const displayValue = (value: string | number | null) => value ?? '-'
 </script>
 
 <template>
-    <div class="w-full max-w-6xl space-y-6 px-4">
+    <div class="w-full space-y-6 px-4">
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
                 <Link href="/po"
@@ -155,8 +155,8 @@ const displayValue = (value: string | number | null) => value ?? '-'
             </dl>
         </section>
 
-        <section class="rounded-lg   bg-card">
-            <div class="flex w-full flex-col gap-6 mx-4 rounded-lg border bg-card p-6">
+        <section class="rounded-lg bg-card">
+            <div class="flex w-full flex-col gap-6 rounded-lg border bg-card p-6">
                 <Tabs>
                     <TabsList>
                         <TabsTrigger value="schedule">
@@ -342,8 +342,8 @@ const displayValue = (value: string | number | null) => value ?? '-'
             </div>
         </section>
 
-        <section class="rounded-lg border bg-card">
-            <div class="border-b p-6">
+        <section class="rounded-lg border bg-card mb-4">
+            <div class="border-b p-6 mx-4">
                 <h2 class="font-semibold">Related Information</h2>
             </div>
 

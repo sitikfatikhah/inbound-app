@@ -60,7 +60,6 @@ const handleSubmit = () => {
                 <ArrowLeft class="h-4 w-4" />
                 Back to Products
             </Link>
-
             <div class="mt-4 flex items-center justify-between">
                 <div>
                     <h1 class="mt-4 text-2xl font-semibold tracking-tight">

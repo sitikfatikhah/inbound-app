@@ -3,13 +3,11 @@ import { Head } from '@inertiajs/vue3';
 import { ClipboardList, Search, Truck } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
-interface Milestone {
+interface StatusHistory {
     id: number;
-    milestone_name: string;
-    status: 'Planned' | 'In Progress' | 'Completed';
-    planned_date: string | null;
-    actual_date: string | null;
-    remarks: string | null;
+    status_type: 'document' | 'shipment';
+    status: string;
+    status_date: string;
 }
 
 interface LocalShipment {
@@ -25,8 +23,12 @@ interface LocalShipment {
         po_number: string;
         supplier?: { supplier_name: string; country: string | null } | null;
     } | null;
+    purchase_orders: Array<{
+        po_number: string;
+        supplier?: { supplier_name: string; country: string | null } | null;
+    }>;
     warehouse?: { warehouse_name: string } | null;
-    milestones: Milestone[];
+    status_histories: StatusHistory[];
 }
 
 const props = defineProps<{ localShipments: LocalShipment[] }>();
@@ -44,6 +46,9 @@ const filteredShipments = computed(() => {
             !keyword ||
             [
                 shipment.shipment_number,
+                ...shipment.purchase_orders.map((purchaseOrder) => purchaseOrder.po_number),
+                ...shipment.purchase_orders.map((purchaseOrder) => purchaseOrder.supplier?.supplier_name),
+                ...shipment.purchase_orders.map((purchaseOrder) => purchaseOrder.supplier?.country),
                 shipment.purchase_order?.po_number,
                 shipment.purchase_order?.supplier?.supplier_name,
                 shipment.purchase_order?.supplier?.country,
@@ -51,9 +56,7 @@ const filteredShipments = computed(() => {
                 shipment.delivery_order_number,
                 shipment.status_document,
                 shipment.tracking_status,
-                ...shipment.milestones.map(
-                    (milestone) => milestone.milestone_name,
-                ),
+                ...shipment.status_histories.map((history) => history.status),
             ].some((value) => value?.toLocaleLowerCase().includes(keyword));
 
         const matchesStatus =
@@ -68,13 +71,7 @@ const filteredShipments = computed(() => {
 function isCompleted(shipment: LocalShipment): boolean {
     const status = shipment.tracking_status?.toLocaleLowerCase() ?? '';
 
-    return (
-        /complete|delivered|arrived|received/.test(status) ||
-        (shipment.milestones.length > 0 &&
-            shipment.milestones.every(
-                (milestone) => milestone.status === 'Completed',
-            ))
-    );
+    return /complete|delivered|arrived|received/.test(status);
 }
 
 function formatDate(value: string | null): string {
@@ -86,21 +83,11 @@ function formatDate(value: string | null): string {
         day: '2-digit',
         month: 'short',
         year: 'numeric',
-        timeZone: 'UTC',
+        hour: '2-digit',
+        minute: '2-digit',
     }).format(new Date(value));
 }
 
-function statusClass(status: string): string {
-    if (status === 'Completed') {
-        return 'bg-emerald-500/10 text-emerald-700';
-    }
-
-    if (status === 'In Progress') {
-        return 'bg-amber-500/10 text-amber-700';
-    }
-
-    return 'bg-muted text-muted-foreground';
-}
 </script>
 
 <template>
@@ -109,7 +96,7 @@ function statusClass(status: string): string {
     <main
         class="min-h-screen w-full bg-slate-50 px-4 py-8 text-slate-900 lg:px-8"
     >
-        <div class="mx-auto max-w-7xl space-y-8">
+        <div class="mx-auto space-y-8">
             <header
                 class="flex flex-col justify-between gap-4 md:flex-row md:items-end"
             >
@@ -126,8 +113,7 @@ function statusClass(status: string): string {
                         Tracking Local
                     </h1>
                     <p class="mt-1 text-sm text-muted-foreground">
-                        Pantau status pengiriman lokal dan progres milestone
-                        setiap shipment.
+                        Pantau riwayat status dokumen dan pengiriman lokal.
                     </p>
                 </div>
                 <div class="relative w-full md:max-w-sm">
@@ -137,7 +123,7 @@ function statusClass(status: string): string {
                     <input
                         v-model="search"
                         type="search"
-                        placeholder="Cari shipment, PO, vendor, milestone..."
+                        placeholder="Cari shipment, PO, vendor, atau status..."
                         class="h-10 w-full rounded-lg border border-border bg-card pr-3 pl-9 text-sm outline-none focus:ring-2 focus:ring-primary/20"
                     />
                 </div>
@@ -190,7 +176,7 @@ function statusClass(status: string): string {
                         {{ completedShipments }}
                     </p>
                     <p class="mt-2 text-xs text-muted-foreground">
-                        Berdasarkan status tracking atau milestone.
+                        Berdasarkan status tracking terakhir.
                     </p>
                 </article>
             </section>
@@ -202,8 +188,7 @@ function statusClass(status: string): string {
                             Daftar local shipment
                         </h2>
                         <p class="mt-1 text-xs text-muted-foreground">
-                            Milestone menampilkan status dan tanggal
-                            planned/actual dari data shipment.
+                            Riwayat status tersusun berdasarkan waktu pembaruan.
                         </p>
                     </div>
                     <div class="flex flex-wrap gap-2">
@@ -252,13 +237,14 @@ function statusClass(status: string): string {
                             </div>
                             <p class="mt-1 text-sm text-muted-foreground">
                                 {{
+                                    shipment.purchase_orders.map((purchaseOrder) => purchaseOrder.po_number).join(', ') ||
                                     shipment.purchase_order?.po_number ||
                                     'PO tidak tersedia'
                                 }}
                                 ·
                                 {{
-                                    shipment.purchase_order?.supplier
-                                        ?.supplier_name ||
+                                    shipment.purchase_orders.map((purchaseOrder) => purchaseOrder.supplier?.supplier_name).filter(Boolean).join(', ') ||
+                                    shipment.purchase_order?.supplier?.supplier_name ||
                                     'Vendor tidak tersedia'
                                 }}
                                 ·
@@ -303,80 +289,55 @@ function statusClass(status: string): string {
                             </div>
                         </dl>
                     </div>
-
-                    <div class="p-5">
-                        <h4 class="mb-3 text-sm font-semibold">
-                            Milestone ({{ shipment.milestones.length }})
-                        </h4>
-                        <ol
-                            v-if="shipment.milestones.length"
-                            class="grid gap-3 md:grid-cols-2"
-                        >
+                    <div
+                        v-if="shipment.status_histories.length"
+                        class="w-full overflow-x-auto p-4"
+                    >
+                        <ol class="flex min-w-max items-start">
                             <li
-                                v-for="milestone in shipment.milestones"
-                                :key="milestone.id"
-                                class="rounded-lg border p-4"
+                                v-for="(history, historyIndex) in shipment.status_histories"
+                                :key="history.id"
+                                class="relative flex w-56 flex-col"
                             >
-                                <div
-                                    class="flex flex-wrap items-start justify-between gap-2"
-                                >
-                                    <p class="font-medium">
-                                        {{ milestone.milestone_name }}
-                                    </p>
+                                <!-- Timeline connector -->
+                                <div class="flex items-center">
+                                    <!-- Circle -->
                                     <span
-                                        class="rounded-full px-2 py-0.5 text-[10px] font-semibold"
-                                        :class="statusClass(milestone.status)"
+                                        class="relative z-10 flex size-5 shrink-0 items-center justify-center rounded-full border-2 border-primary bg-card"
+                                        aria-hidden="true"
                                     >
-                                        {{ milestone.status }}
+                                        <span class="size-2 rounded-full bg-primary" />
                                     </span>
+
+                                    <!-- Horizontal line -->
+                                    <span
+                                        v-if="historyIndex < shipment.status_histories.length - 1"
+                                        class="h-px w-full bg-border"
+                                        aria-hidden="true"
+                                    />
                                 </div>
-                                <dl class="mt-3 grid grid-cols-2 gap-3 text-xs">
-                                    <div>
-                                        <dt class="text-muted-foreground">
-                                            Planned
-                                        </dt>
-                                        <dd class="mt-1 font-medium">
-                                            {{
-                                                formatDate(
-                                                    milestone.planned_date,
-                                                )
-                                            }}
-                                        </dd>
-                                    </div>
-                                    <div>
-                                        <dt class="text-muted-foreground">
-                                            Actual
-                                        </dt>
-                                        <dd class="mt-1 font-medium">
-                                            {{
-                                                formatDate(
-                                                    milestone.actual_date,
-                                                )
-                                            }}
-                                        </dd>
-                                    </div>
-                                </dl>
-                                <p
-                                    v-if="milestone.remarks"
-                                    class="mt-3 text-xs text-muted-foreground"
-                                >
-                                    {{ milestone.remarks }}
-                                </p>
+
+                                <!-- Status information -->
+                                <div class="mt-3 pr-4">
+                                    <p class="text-sm font-semibold">
+                                        {{ history.status_type === 'document'
+                                            ? 'Status dokumen'
+                                            : 'Status shipment'
+                                        }}
+                                    </p>
+
+                                    <time class="mt-1 block text-xs text-muted-foreground">
+                                        {{ formatDate(history.status_date) }}
+                                    </time>
+
+                                    <p class="mt-2 text-sm text-muted-foreground whitespace-normal">
+                                        {{ history.status }}
+                                    </p>
+                                </div>
                             </li>
                         </ol>
-                        <p
-                            v-else
-                            class="rounded-lg border border-dashed p-5 text-center text-sm text-muted-foreground"
-                        >
-                            Belum ada milestone untuk shipment ini.
-                        </p>
-                        <p
-                            v-if="shipment.remarks"
-                            class="mt-4 text-sm whitespace-pre-line text-muted-foreground"
-                        >
-                            {{ shipment.remarks }}
-                        </p>
                     </div>
+
                 </div>
 
                 <div

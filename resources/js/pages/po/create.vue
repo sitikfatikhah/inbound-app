@@ -1,31 +1,14 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
 import {
     ArrowLeft,
     Plus,
     Trash2,
 } from 'lucide-vue-next'
+import { computed } from 'vue'
 
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-
-import {
-    Tabs,
-    TabsContent,
-    TabsList,
-    TabsTrigger,
-} from '@/components/ui/tabs'
-
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableFooter,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table'
+import { Card } from '@/components/ui/card'
 
 import {
     Field,
@@ -36,7 +19,22 @@ import {
     FieldSet,
 } from '@/components/ui/field'
 
-import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableFooter,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table'
+import {
+    Tabs,
+    TabsContent,
+    TabsList,
+    TabsTrigger,
+} from '@/components/ui/tabs'
 
 /**
  * =========================
@@ -233,9 +231,7 @@ const selectProduct = (
  * =========================
  */
 
-const calculateItemTotal = (
-    item: PurchaseOrderItem
-) => {
+const calculateItemTotal = (item: PurchaseOrderItem) => {
     const quantity =
         Number(item.quantity || 0)
 
@@ -254,13 +250,8 @@ const calculateItemTotal = (
 
 const grandTotal = computed(() => {
     return form.items.reduce(
-        (total, item) => {
-            return (
-                total +
-                Number(
-                    item.total_price || 0
-                )
-            )
+        (total_price, item) => {
+            return total_price + Number(item.total_price || 0)
         },
         0
     )
@@ -562,6 +553,7 @@ const handleSubmit = () => {
 
                         <select
                             v-model="form.category"
+                            required
                             class="flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm"
                         >
                             <option value="">
@@ -622,6 +614,7 @@ const handleSubmit = () => {
                         <p
                             v-if="form.errors.currency"
                             class="text-sm text-destructive"
+                            :disabled="form.category === 'Local'"
                         >
                             {{ form.errors.currency }}
                         </p>
@@ -884,6 +877,12 @@ const handleSubmit = () => {
                                         Add products included in this purchase order.
                                     </p>
 
+                                    <p
+                                        v-if="form.errors.items"
+                                        class="text-sm text-destructive"
+                                    >
+                                        {{ form.errors.items }}
+                                    </p>
                                 </div>
 
 
@@ -977,6 +976,7 @@ const handleSubmit = () => {
 
                                                 <select
                                                     v-model="item.product_id"
+                                                    required
                                                     @change="selectProduct(item)"
                                                     class="flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm"
                                                 >
@@ -1018,9 +1018,16 @@ const handleSubmit = () => {
                                                     type="number"
                                                     min="0.01"
                                                     step="0.01"
+                                                    required
                                                     class="w-24"
                                                     @input="calculateItemTotal(item)"
                                                 />
+                                                <p
+                                                    v-if="form.errors[`items.${index}.quantity`]"
+                                                    class="mt-1 text-xs text-destructive"
+                                                >
+                                                    {{ form.errors[`items.${index}.quantity`] }}
+                                                </p>
 
                                             </TableCell>
 
@@ -1102,9 +1109,16 @@ const handleSubmit = () => {
                                                     type="number"
                                                     min="0"
                                                     step="0.01"
+                                                    required
                                                     class="w-32"
                                                     @input="calculateItemTotal(item)"
                                                 />
+                                                <p
+                                                    v-if="form.errors[`items.${index}.unit_price`]"
+                                                    class="mt-1 text-xs text-destructive"
+                                                >
+                                                    {{ form.errors[`items.${index}.unit_price`] }}
+                                                </p>
 
                                             </TableCell>
 

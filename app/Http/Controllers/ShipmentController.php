@@ -69,7 +69,7 @@ class ShipmentController extends Controller
             'portOfDischarge:id,port_name',
             'warehouse:id,warehouse_name',
             'purchaseOrders:id,po_number',
-            'shipmentContainers',
+            'shipmentContainers.purchaseOrderItem:id,product_code,product_name,unit',
             'milestones',
             'statusHistories',
         ]);

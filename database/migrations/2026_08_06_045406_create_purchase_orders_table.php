@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('supplier_id')->constrained('Suppliers')->cascadeOnDelete();
             $table->string('po_number', 100);
-            $table->string('category')->nullable();
+            $table->string('category');
             $table->dateTime('po_date');
             $table->string('currency', 10)->nullable();
             $table->decimal('exchange_rate', 10, 2)->nullable();
@@ -23,7 +23,7 @@ return new class extends Migration
             $table->string('payment_term', 100)->nullable();
             $table->dateTime('delivery_date')->nullable();
             $table->dateTime('arrival_date')->nullable();
-            $table->boolean('status')->nullable();
+            $table->string('status', 50)->nullable();
             $table->dateTime('created_at');
             $table->dateTime('updated_at');
         });

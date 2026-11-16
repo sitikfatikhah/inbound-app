@@ -1,26 +1,46 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Link, useForm } from '@inertiajs/vue3';
 import { ArrowLeft, Plus, PlusCircle, Trash2 } from 'lucide-vue-next';
+import { computed } from 'vue';
 import {
     index,
     store,
 } from '@/actions/App/Http/Controllers/LocalShipmentsController';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import PurchaseOrderController from '@/actions/App/Http/Controllers/PurchaseOrderController';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 
 interface PurchaseOrder {
     id: number;
     po_number: string;
-    supplier?: { supplier_name: string } | null;
+    supplier?: {
+        supplier_name: string;
+    };
+}
+
+interface PurchaseOrderItems {
+    id: number;
+    purchase_order_id: number;
+    product_id: number;
+    product_code: string | null;
+    product_name: string | null;
+    quantity: number | string | null;
+    remaining_qty: number | string | null;
+    unit: string | null;
 }
 
 interface Warehouse {
     id: number;
+    warehouse_code: string;
     warehouse_name: string;
+}
+interface TrackingStatus {
+    id: number;
+    category: string;
+    name: string;
+    is_active: boolean;
 }
 
 interface Milestone {
@@ -31,44 +51,97 @@ interface Milestone {
     remarks: string;
 }
 
-const props = defineProps<{
-    shipment_number: string;
-    purchaseOrders: PurchaseOrder[];
-    warehouses: Warehouse[];
-}>();
+
 
 interface ShipmentItemRow {
     purchase_order_id: number | null;
     purchase_order_item_id: number | null;
     product_code: string;
+    product_name: string;
+    product_id: number | null;
     quantity: number | null;
+    unit: string;
 }
+
+interface Props {
+    shipment_number: string;
+    purchaseOrders: PurchaseOrder[];
+    purchaseOrderItems: PurchaseOrderItems[];
+    warehouses: Warehouse[];
+    status_document: TrackingStatus[];
+    tracking_status: TrackingStatus[];
+}
+const props = defineProps<Props>();
+
+const warehouses = props.warehouses;
+const purchaseOrders = props.purchaseOrders;
+const purchaseOrderItems = props.purchaseOrderItems;
 
 const form = useForm({
     shipment_number: props.shipment_number,
-    purchase_order_ids: [] as number[],
     warehouse_id: '',
     delivery_order_number: '',
     etd: '',
     atd: '',
-    status_document: 'purchase order created',
-    tracking_status: 'not shipped',
+    status_document: '',
+    tracking_status: '',
     remarks: '',
-    item: [] as ShipmentItemRow[],
+    items: [] as ShipmentItemRow[],
     milestones: [] as Milestone[],
 });
 
 const selectedPos = computed(() =>
-    new Set(form.item.map((item) => item.purchase_order_id).filter(Boolean)),
+    new Set(form.items.map((item) => item.purchase_order_id).filter(Boolean)),
 );
+const getRemainingQuantity = (item: PurchaseOrderItems) =>
+    Math.max(0, Number(item.remaining_qty ?? item.quantity ?? 0));
+const getPurchaseOrderItems = (purchaseOrderId: number | null) => {
+    if (!purchaseOrderId) {
+        return [];
+    }
 
+    return purchaseOrderItems.filter(
+        (item) =>
+            Number(item.purchase_order_id) === Number(purchaseOrderId) &&
+            getRemainingQuantity(item) > 0,
+    );
+};
+const availablePurchaseOrders = computed(() =>
+    purchaseOrders.filter(
+        (purchaseOrder) => getPurchaseOrderItems(purchaseOrder.id).length > 0,
+    ),
+);
+const getSelectedItem = (row: ShipmentItemRow) =>
+    getPurchaseOrderItems(row.purchase_order_id).find(
+        (item) => item.id === row.purchase_order_item_id,
+    );
+const getSelectedRemainingQuantity = (row: ShipmentItemRow) => {
+    const item = getSelectedItem(row);
+
+    return item ? getRemainingQuantity(item) : undefined;
+};
 const addPurchaseOrderItem = () => {
-    form.item.push({
+    form.items.push({
         purchase_order_id: null,
         purchase_order_item_id: null,
         product_code: '',
+        product_name: '',
+        product_id: null,
         quantity: null,
+        unit: '',
     });
+};
+const selectPurchaseOrderItem = (row: ShipmentItemRow) => {
+    const selectedItem = getSelectedItem(row);
+
+    row.quantity = null;
+    row.product_id = selectedItem?.product_id ?? null;
+    row.product_code = selectedItem?.product_code ?? '';
+    row.product_name = selectedItem?.product_name ?? '';
+    row.unit = selectedItem?.unit ?? '';
+};
+const updateQuantity = (row: ShipmentItemRow, value: string | number) => {
+    row.quantity = value === '' ? null : Number(value);
 };
 
 function addMilestone() {
@@ -86,7 +159,6 @@ function submit() {
 </script>
 
 <template>
-    <Head title="Buat Local Shipment" />
 
     <main class="mx-auto w-full space-y-6 sm:p-8 sm:mx-0 mx-4 rounded-lg border bg-card ml-8">
         <header class="space-y-2">
@@ -121,7 +193,6 @@ function submit() {
                             {{ form.errors.shipment_number }}
                         </span>
                     </label>
-
                     <label class="space-y-2 text-sm font-medium">
                         Gudang
                         <select
@@ -135,7 +206,7 @@ function submit() {
                                 :key="warehouse.id"
                                 :value="String(warehouse.id)"
                             >
-                                {{ warehouse.warehouse_name }}
+                                {{ warehouse.warehouse_code }} - {{ warehouse.warehouse_name }}
                             </option>
                         </select>
                         <span
@@ -145,7 +216,6 @@ function submit() {
                             {{ form.errors.warehouse_id }}
                         </span>
                     </label>
-
                     <label class="space-y-2 text-sm font-medium">
                         Nomor delivery order
                         <input
@@ -161,11 +231,20 @@ function submit() {
                     </label>
                     <label class="space-y-2 text-sm font-medium">
                         Status dokumen
-                        <input
+                        <select
                             v-model="form.status_document"
                             required
                             class="h-10 w-full rounded-md border bg-background px-3 font-normal"
-                        />
+                        >
+                            <option value="" disabled>Pilih status dokumen</option>
+                            <option
+                                v-for="status_document  in props.status_document"
+                                :key="status_document.id"
+                                :value="status_document.name"
+                            >
+                                {{ status_document.category }} - {{ status_document.name }}
+                            </option>
+                        </select>
                         <span
                             v-if="form.errors.status_document"
                             class="block text-xs text-destructive"
@@ -176,11 +255,20 @@ function submit() {
 
                     <label class="space-y-2 text-sm font-medium">
                         Status tracking
-                        <input
+                        <select
                             v-model="form.tracking_status"
                             required
                             class="h-10 w-full rounded-md border bg-background px-3 font-normal"
-                        />
+                        >
+                            <option value="" disabled>Pilih status tracking</option>
+                            <option
+                                v-for="tracking_status  in props.tracking_status"
+                                :key="tracking_status.id"
+                                :value="tracking_status.name"
+                            >
+                                {{ tracking_status.category }} - {{ tracking_status.name }}
+                            </option>
+                        </select>
                         <span
                             v-if="form.errors.tracking_status"
                             class="block text-xs text-destructive"
@@ -193,103 +281,159 @@ function submit() {
             <section class="rounded-lg border bg-card p-5">
                 <Tabs default-value="containers" class="w-full">
                 <TabsList class="flex h-auto flex-wrap">
-                    <TabsTrigger value="containers">PurchaseOrderItems</TabsTrigger>
+                    <TabsTrigger value="containers">PO Item Allocations</TabsTrigger>
                     <TabsTrigger value="schedule">Shipment Schedule</TabsTrigger>
                     <TabsTrigger value="related">Related Information</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="containers" class="space-y-5 pt-5">                 
                     <div class="space-y-4 border-t pt-4">
-                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+
                         <div>
-                            <h4 class="font-medium">PO Line PurchaseOrderItems</h4>
-                            <p class="text-sm text-muted-foreground">Each item is one table row. Add items to append rows to this table.</p>
+                            <h4 class="font-medium">Purchase Order Allocations</h4>
+                            <p class="text-sm text-muted-foreground">Each row allocates a purchase order line to this local shipment.</p>
                         </div>
                         <Button type="button" variant="outline" @click="addPurchaseOrderItem">
                             <PlusCircle class="mr-2 h-4 w-4" /> Add PO Item
                         </Button>
-                        </div>
+                        <span
+                            v-if="form.errors.items"
+                            class="block text-xs text-destructive"
+                        >
+                            {{ form.errors.items }}
+                        </span>
+
 
                         <div class="w-full overflow-x-auto rounded-md border">
                         <Table class="w-full min-w-[1150px]">
                             <TableHeader>
                             <TableRow>
                                 <TableHead class="w-12">No.</TableHead>
-                                <TableHead class="min-w-[300px]">Purchase Order</TableHead>
-                                <TableHead class="min-w-[300px]">Purchase Order PurchaseOrderItem</TableHead>
-                                <TableHead class="w-[180px]">Quantity</TableHead>
-                                <TableHead class="min-w-[360px]">Unit</TableHead>
-                                <TableHead class="w-[72px] text-right">Action</TableHead>
+                                <TableHead class="min-w-[400px]">Purchase Order</TableHead>
+                                <TableHead class="min-w-[400px]">Purchase Order Item</TableHead>
+                                <TableHead class="min-w-[240px]">Quantity</TableHead>
+                                <TableHead class="min-w-[240px]">Unit</TableHead>
+                                <TableHead class="w-[86px] text-left">Action</TableHead>
                             </TableRow>
                             </TableHeader>
 
                             <TableBody>
-                            <TableRow v-for="(row, itemIndex) in form.item" :key="itemIndex">
+                            <TableRow v-for="(row, itemIndex) in form.items" :key="itemIndex">
                                 <TableCell class="align-middle text-muted-foreground">
                                 {{ itemIndex + 1 }}
                                 </TableCell>
 
                                 <TableCell class="align-middle">
                                 <select
-                                    :value="row.purchase_order_id ?? ''"
+                                    v-model.number="row.purchase_order_id"
                                     class="flex h-10 w-full min-w-0 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                    <option value="" disabled>Select PO item</option>
-                            
+                                    @change="
+                                        row.purchase_order_item_id = null;
+                                        row.product_id = null;
+                                        row.product_code = '';
+                                        row.product_name = '';
+                                        row.quantity = null;
+                                        row.unit = '';
+                                    "
+                                    >
+                                    <option value="" disabled>
+                                        {{ availablePurchaseOrders.length ? 'Select Purchase Order' : 'No local PO items available' }}
+                                    </option>
+                                    <option v-for="purchaseOrder in availablePurchaseOrders" :value="purchaseOrder.id" :key="purchaseOrder.id">
+                                        {{ purchaseOrder.supplier?.supplier_name }} - {{ purchaseOrder.po_number }}
+                                    </option>
                                 </select>
+                                <span
+                                    v-if="form.errors[`items.${itemIndex}.purchase_order_id`]"
+                                    class="text-xs text-destructive"
+                                >
+                                    {{ form.errors[`items.${itemIndex}.purchase_order_id`] }}
+                                </span>
                                 </TableCell>
                                 <TableCell class="align-middle">
                                 <select
-                                    :value="row.product_code ?? ''"
+                                    v-model.number="row.purchase_order_item_id"
+                                    :disabled="!row.purchase_order_id"
                                     class="flex h-10 w-full min-w-0 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                >
+                                    @change="selectPurchaseOrderItem(row)"
+                                    >
+
                                     <option value="" disabled>Select PO item</option>
-                            
+                                    <option v-for="item in getPurchaseOrderItems(row.purchase_order_id)" :value="item.id" :key="item.id">
+                                        {{ item.product_code }} - {{ item.product_name }}
+                                    </option>
                                 </select>
+                                <span
+                                    v-if="form.errors[`items.${itemIndex}.purchase_order_item_id`]"
+                                    class="text-xs text-destructive"
+                                >
+                                    {{ form.errors[`items.${itemIndex}.purchase_order_item_id`] }}
+                                </span>
                         
                                 </TableCell>
 
                                 <TableCell class="align-middle">
                                 <Input
-                                    :model-Value="row.quantity"
-                                    @update:model-value="row.quantity = Number($event) || 0"
+                                    :model-value="row.quantity ?? ''"
+                                    @update:model-value="updateQuantity(row, $event)"
                                     type="number"
                                     min="0.01"
+                                    :max="getSelectedRemainingQuantity(row)"
                                     step="0.01"
-                                    :disabled="!row.product_code"
-                                    placeholder="0"
+                                    :disabled="!row.purchase_order_item_id"
+                                    :placeholder="String(getSelectedRemainingQuantity(row) ?? '')"
                                     class="min-w-[120px]"
                                 />
+                                <span
+                                    v-if="getSelectedRemainingQuantity(row) !== undefined"
+                                    class="text-xs text-muted-foreground"
+                                >
+                                </span>
+                                <span
+                                    v-if="form.errors[`items.${itemIndex}.quantity`]"
+                                    class="text-xs text-destructive"
+                                >
+                                    {{ form.errors[`items.${itemIndex}.quantity`] }}
+                                </span>
                                 </TableCell>
-                                <TableCell class="text-right align-middle">
+                                <TableCell class="align-middle">
+                                <Input
+                                    :model-value="row.unit"
+                                    type="text"
+                                    :disabled="!row.purchase_order_item_id"
+                                    readonly
+                                    placeholder="Unit"
+                                />
+                                </TableCell>
+                                <TableCell>
                                 <Button
                                     type="button"
                                     variant="ghost"
                                     size="icon"
                                     aria-label="Remove PO item"
-                                    @click="form.item.splice(itemIndex, 1)"
+                                    @click="form.items.splice(itemIndex, 1)"
                                 >
                                     <Trash2 class="h-4 w-4 text-destructive" />
                                 </Button>
                                 </TableCell>
                             </TableRow>
 
-                            <TableRow v-if="form.item.length === 0">
+                            <TableRow v-if="form.items.length === 0">
                                 <TableCell :colspan="6" class="h-24 text-center text-muted-foreground">
-                                No PO items assigned to this container. Click “Add PO PurchaseOrderItem” to add a row.
+                                No PO items allocated yet. Add a row to select an item.
                                 </TableCell>
                             </TableRow>
                             </TableBody>
                         </Table>
                         </div>
                         <p class="text-xs text-muted-foreground">
-                        {{ form.item.length }} item row(s)
+                        {{ form.items.length }} item row(s)
                         </p>
                     </div>
                     <div class="flex flex-wrap justify-between gap-3 rounded-lg bg-muted/30 p-4">
                     <div class="text-sm"><span class="text-muted-foreground">POs included:</span> <strong>{{ selectedPos.size }}</strong></div>
                     </div>
-                    <p class="text-xs text-muted-foreground">The PO line's quantity, product details, and total_price are not edited here. On save, the server must deduct the summed container quantity from that line's backorder_qty inside a database transaction.</p>
+                    <p class="text-xs text-muted-foreground">Product details come from the selected PO line. Allocated quantities reduce the line's remaining quantity when saved.</p>
                 </TabsContent>
 
                 <TabsContent value="schedule" class="pt-5">
@@ -318,6 +462,7 @@ function submit() {
                 </TabsContent>
                 </Tabs>
             </section>
+            <!-- Milestone Section -->
             <section class="space-y-5 rounded-xl border bg-card p-5">
                 <div class="flex flex-wrap items-center justify-between gap-3">
                     <div>

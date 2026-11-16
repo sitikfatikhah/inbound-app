@@ -7,6 +7,24 @@ import {
     edit,
     show,
 } from '@/actions/App/Http/Controllers/LocalShipmentsController';
+import {
+    Table,
+    TableBody,
+    TableCaption,
+    TableCell,
+    TableFooter,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table'
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 interface LocalShipment {
     id: number;
@@ -16,12 +34,16 @@ interface LocalShipment {
     atd: string | null;
     status_document: string | null;
     tracking_status: string | null;
+    purchase_orders: Array<{
+        po_number: string;
+        supplier?: { supplier_name: string } | null;
+    }>;
     purchase_order?: {
         po_number: string;
         supplier?: { supplier_name: string } | null;
     } | null;
     warehouse?: { warehouse_name: string } | null;
-    milestones: Array<{ status: string }>;
+    status_histories_count: number;
 }
 
 const props = defineProps<{ localShipments: LocalShipment[] }>();
@@ -37,6 +59,8 @@ const filteredShipments = computed(() => {
     return props.localShipments.filter((shipment) =>
         [
             shipment.shipment_number,
+            shipment.purchase_orders.map((purchaseOrder) => purchaseOrder.po_number).join(', '),
+            shipment.purchase_orders.map((purchaseOrder) => purchaseOrder.supplier?.supplier_name).join(', '),
             shipment.purchase_order?.po_number,
             shipment.purchase_order?.supplier?.supplier_name,
             shipment.warehouse?.warehouse_name,
@@ -63,7 +87,7 @@ function dateLabel(value: string | null): string {
 function deleteShipment(shipment: LocalShipment) {
     if (
         window.confirm(
-            `Hapus ${shipment.shipment_number} beserta milestone-nya?`,
+            `Hapus ${shipment.shipment_number} beserta riwayat statusnya?`,
         )
     ) {
         router.delete(destroy.url(shipment.id));
@@ -79,47 +103,47 @@ function deleteShipment(shipment: LocalShipment) {
             <div class="space-y-2">
                 <h1 class="text-2xl font-semibold">Local Shipment</h1>
                 <p class="text-sm text-muted-foreground">
-                    Kelola shipment lokal, status, dan milestone.
+                    Manage local shipments and their status history.
                 </p>
             </div>
             <Link
                 :href="create.url()"
                 class="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
             >
-                Buat shipment
+                Create Shipment
             </Link>
         </header>
 
         <label class="block max-w-md space-y-2 text-sm font-medium">
-            Cari shipment
+            Search Shipment
             <input
                 v-model="search"
                 type="search"
-                placeholder="Nomor, PO, vendor, gudang..."
+                placeholder="Number, PO, vendor, warehouse..."
                 class="h-10 w-full rounded-md border bg-background px-3 font-normal"
             />
         </label>
 
         <div class="overflow-x-auto rounded-xl border bg-card">
-            <table class="w-full min-w-[900px] text-left text-sm">
-                <thead class="border-b bg-muted/40 text-muted-foreground">
-                    <tr>
-                        <th class="p-4 font-medium">Shipment</th>
-                        <th class="p-4 font-medium">PO / Vendor</th>
-                        <th class="p-4 font-medium">Gudang</th>
-                        <th class="p-4 font-medium">ETD / ATD</th>
-                        <th class="p-4 font-medium">Tracking</th>
-                        <th class="p-4 font-medium">Milestone</th>
-                        <th class="p-4 text-right font-medium">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr
+            <Table class="w-full min-w-[900px] text-left text-sm">
+                <TableHeader class="border-b bg-muted/40 text-muted-foreground">
+                    <TableRow>
+                        <TableHead class="p-4 font-medium">Shipment</TableHead>
+                        <TableHead class="p-4 font-medium">PO / Vendor</TableHead>
+                        <TableHead class="p-4 font-medium">Warehouse</TableHead>
+                        <TableHead class="p-4 font-medium">ETD / ATD</TableHead>
+                        <TableHead class="p-4 font-medium">Tracking</TableHead>
+                        <TableHead class="p-4 font-medium">History</TableHead>
+                        <TableHead class="p-4 font-medium">Actions</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    <TableRow
                         v-for="shipment in filteredShipments"
                         :key="shipment.id"
                         class="border-b last:border-0"
                     >
-                        <td class="p-4">
+                        <TableCell class="p-4">
                             <Link
                                 :href="show.url(shipment.id)"
                                 class="font-semibold text-primary hover:underline"
@@ -128,70 +152,82 @@ function deleteShipment(shipment: LocalShipment) {
                             <p class="mt-1 text-xs text-muted-foreground">
                                 {{
                                     shipment.delivery_order_number ||
-                                    'Tanpa nomor delivery order'
+                                    'Without delivery order number'
                                 }}
                             </p>
-                        </td>
-                        <td class="p-4">
+                        </TableCell>
+                        <TableCell class="p-4">
                             <p>
-                                {{ shipment.purchase_order?.po_number || '-' }}
+                                {{ shipment.purchase_orders.map((purchaseOrder) => purchaseOrder.po_number).join(', ') || shipment.purchase_order?.po_number || '-' }}
                             </p>
                             <p class="mt-1 text-xs text-muted-foreground">
                                 {{
-                                    shipment.purchase_order?.supplier
-                                        ?.supplier_name || '-'
+                                    shipment.purchase_orders.map((purchaseOrder) => purchaseOrder.supplier?.supplier_name).filter(Boolean).join(', ') || shipment.purchase_order?.supplier?.supplier_name || '-'
                                 }}
                             </p>
-                        </td>
-                        <td class="p-4">
+                        </TableCell>
+                        <TableCell class="p-4">
                             {{ shipment.warehouse?.warehouse_name || '-' }}
-                        </td>
-                        <td class="p-4">
+                        </TableCell>
+                        <TableCell class="p-4">
                             <p>ETD {{ dateLabel(shipment.etd) }}</p>
                             <p class="mt-1 text-xs text-muted-foreground">
                                 ATD {{ dateLabel(shipment.atd) }}
                             </p>
-                        </td>
-                        <td class="p-4">
+                        </TableCell>
+                        <TableCell class="p-4">
                             <p class="font-medium">
                                 {{ shipment.tracking_status || '-' }}
                             </p>
                             <p class="mt-1 text-xs text-muted-foreground">
                                 {{ shipment.status_document || '-' }}
                             </p>
-                        </td>
-                        <td class="p-4">{{ shipment.milestones.length }}</td>
-                        <td class="p-4">
-                            <div class="flex justify-end gap-2">
-                                <Link
-                                    :href="edit.url(shipment.id)"
-                                    class="rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-muted"
-                                    >Edit</Link
-                                >
-                                <button
-                                    type="button"
-                                    class="rounded-md border border-destructive/30 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10"
-                                    @click="deleteShipment(shipment)"
-                                >
-                                    Hapus
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr v-if="!filteredShipments.length">
-                        <td
+                        </TableCell>
+                        <TableCell class="p-4">{{ shipment.status_histories_count }}</TableCell>
+                        <TableCell>
+                            <DropdownMenu class="pl-4">
+                                    <DropdownMenuTrigger as-child>
+                                        <Button variant="ghost" size="icon">
+                                            ⋮
+                                        </Button>
+                                    </DropdownMenuTrigger>
+
+                                    <DropdownMenuContent align="end" side="bottom" :side-offset="4">
+                                        <DropdownMenuLabel>
+                                            Actions
+                                        </DropdownMenuLabel>
+
+                                        <DropdownMenuSeparator />
+
+                                        <DropdownMenuItem as-child>
+                                            <Link :href="show.url(shipment.id)">
+                                                View
+                                            </Link>
+                                            </DropdownMenuItem>
+
+                                            <DropdownMenuItem as-child>
+                                                <Link :href="edit.url(shipment.id)">
+                                                    Edit
+                                                </Link>
+                                            </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                        </TableCell>
+                    </TableRow>
+                    <TableRow v-if="!filteredShipments.length">
+                        <TableCell
                             colspan="7"
                             class="p-10 text-center text-muted-foreground"
                         >
                             {{
                                 search
-                                    ? 'Tidak ada shipment yang cocok dengan pencarian.'
-                                    : 'Belum ada local shipment.'
+                                    ? 'Sorry, no shipments found.'
+                                    : 'Sorry, no shipments available.'
                             }}
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+                        </TableCell>
+                    </TableRow>
+                </TableBody>
+            </Table>
         </div>
         <p class="text-sm text-muted-foreground">
             Menampilkan {{ filteredShipments.length }} dari

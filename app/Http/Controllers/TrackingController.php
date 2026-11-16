@@ -41,8 +41,10 @@ class TrackingController extends Controller
                 ->with([
                     'purchaseOrder:id,po_number,supplier_id,po_date,delivery_date,arrival_date,category,status',
                     'purchaseOrder.supplier:id,supplier_name,country',
+                    'purchaseOrders',
+                    'purchaseOrders.supplier:id,supplier_name,country',
                     'warehouse:id,warehouse_name',
-                    'milestones' => fn ($query) => $query->orderBy('planned_date')->orderBy('id'),
+                    'statusHistories',
                 ])
                 ->whereHas('purchaseOrder', fn ($query) => $query->whereRaw('LOWER(category) = ?', ['local']))
                 ->latest()

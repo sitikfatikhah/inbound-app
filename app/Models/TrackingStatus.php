@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class TrackingStatus extends Model
 {
-    protected $table = 'tracking_status';
+    protected $table = 'tracking_statuses';
 
     protected $fillable = [
         'category',
@@ -19,7 +19,6 @@ class TrackingStatus extends Model
     {
         return [
             'is_active' => 'boolean',
-            'sort_order' => 'integer',
         ];
     }
 }

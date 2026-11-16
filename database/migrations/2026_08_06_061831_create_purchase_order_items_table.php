@@ -18,13 +18,16 @@ return new class extends Migration
             $table->string('product_code', 100)->nullable(); // diambil dari Products
             $table->string('product_name', 255)->nullable(); // diambil dari Products
             $table->string('hs_code', 50)->nullable(); // diambil dari Products
-            $table->integer('quantity')->nullable(); // diambil dari Products
+            $table->decimal('quantity', 12, 2)->nullable(); // diambil dari Products
+            $table->decimal('backorder_qty', 12, 2)->nullable();
+            $table->decimal('remaining_qty', 12, 2)->nullable();
+            $table->decimal('total_allocated', 12, 2)->default(0);
             $table->string('unit')->nullable(); // diambil dari Products
             $table->string('facility')->nullable(); // diambil dari Products
             $table->decimal('import_duty', 20, 6)->nullable(); // diambil dari Products
             $table->decimal('exchange_rate', 20, 6)->nullable();
-            $table->decimal('total_price', 10, 2)->nullable();
-            $table->decimal('unit_price', 10, 2)->nullable();
+            $table->decimal('unit_price', 12, 2)->nullable();
+            $table->decimal('total_price', 12, 2)->nullable();
             $table->timestamps();
         });
     }

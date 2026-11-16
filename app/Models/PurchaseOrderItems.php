@@ -53,4 +53,9 @@ class PurchaseOrderItems extends Model
     {
         return $this->hasMany(ShipmentContainers::class, 'purchase_order_item_id');
     }
+
+    public function localShipmentAllocations(): HasMany
+    {
+        return $this->hasMany(LocalShipmentItem::class, 'purchase_order_item_id');
+    }
 }

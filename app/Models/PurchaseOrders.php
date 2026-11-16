@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class PurchaseOrders extends Model
 {
@@ -49,5 +50,27 @@ class PurchaseOrders extends Model
     public function localDeliveries(): HasMany
     {
         return $this->hasMany(LocalDelivery::class, 'purchase_order_id');
+    }
+
+    public function localShipments(): HasMany
+    {
+        return $this->hasMany(LocalShipments::class, 'purchase_order_id');
+    }
+
+    public function localShipmentItems(): HasMany
+    {
+        return $this->hasMany(LocalShipmentItem::class, 'purchase_order_id');
+    }
+
+    public function allocatedLocalShipments(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            LocalShipments::class,
+            LocalShipmentItem::class,
+            'purchase_order_id',
+            'id',
+            'id',
+            'local_shipment_id',
+        )->distinct();
     }
 }

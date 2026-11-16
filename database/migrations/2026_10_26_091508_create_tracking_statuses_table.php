@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tracking_status', function (Blueprint $table) {
+        Schema::create('tracking_statuses', function (Blueprint $table) {
             $table->id();
             $table->string('category', 30);
             $table->string('code', 100);
@@ -20,7 +20,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['category', 'code']);
-            $table->index(['category', 'is_active', 'sort_order']);
+            $table->index(['category', 'is_active']);
         });
     }
 

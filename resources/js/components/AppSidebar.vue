@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
-import { Box, ChartNoAxesCombinedIcon, CircleArrowLeft } from 'lucide-vue-next';
+import { Box, ChartNoAxesCombinedIcon, MessageSquareDot } from 'lucide-vue-next';
 
 const mainNavItems: NavItem[] = [
     {
@@ -58,9 +58,9 @@ const masterDataItems: NavItem[] = [
         icon: Users,
     },
     {
-        title: 'Tracking-status',
+        title: 'Status',
         href: '/tracking-status',
-        icon: CircleArrowLeft,
+        icon: MessageSquareDot,
     },
 ];
 
@@ -79,6 +79,11 @@ const transactionItems: NavItem[] = [
         title: 'PO',
         href: '/po',
         icon: ClipboardList,
+    },
+    {
+        title: 'Arrival Warehouse',
+        href: '/tracking/warehouse',
+        icon: Warehouse,
     },
 ];
 
@@ -105,11 +110,6 @@ const trackingItems: NavItem[] = [
         title: 'Tracking Local PO',
         href: '/tracking/local',
         icon: Truck,
-    },
-    {
-        title: 'Arrival Warehouse',
-        href: '/tracking/warehouse',
-        icon: Warehouse,
     },
 ];
 

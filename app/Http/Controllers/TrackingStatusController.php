@@ -16,19 +16,24 @@ class TrackingStatusController extends Controller
      */
     public function index(): Response
     {
-        $status = TrackingStatus::latest()->get();
+        $tracking_statuses = TrackingStatus::latest()->get();
 
         return Inertia::render('tracking-status/index', [
-            'status' => $status,
+            'tracking_statuses' => $tracking_statuses,
         ]);
     }
 
     /**
      * Show the form for creating a new tracking status.
      */
-    public function create(): Response
+    public function create()
     {
-        return Inertia::render('tracking-status/create');
+        return Inertia::render('tracking-status/create', [
+            'tracking_statuses' => TrackingStatus::query()
+                ->select('id', 'category')
+                ->orderBy('is_active')
+                ->get(),
+        ]);
     }
 
     /**
@@ -42,10 +47,11 @@ class TrackingStatusController extends Controller
                 'required',
                 'string',
                 'max:100',
-                Rule::unique('tracking_status', 'code')->where(fn ($query) => $query->where('category', $request->string('category'))),
+                Rule::unique('tracking_statuses', 'code')
+                    ->where(fn ($query) => $query->where('category', $request->input('category'))
+                    ),
             ],
             'name' => ['required', 'string', 'max:255'],
-            'sort_order' => ['required', 'integer', 'min:0'],
             'is_active' => ['boolean'],
         ]);
 
@@ -59,46 +65,43 @@ class TrackingStatusController extends Controller
     /**
      * Display the specified tracking status.
      */
-    public function show(TrackingStatus $status): Response
+    public function show(TrackingStatus $tracking_status): Response
     {
         return Inertia::render('tracking-status/show', [
-            'status' => $status,
+            'tracking_statuses' => $tracking_status,
         ]);
     }
 
     /**
      * Show the form for editing the specified tracking status.
      */
-    public function edit(TrackingStatus $status): Response
+    public function edit(TrackingStatus $tracking_status): Response
     {
         return Inertia::render('tracking-status/edit', [
-            'status' => $status,
+            'tracking_statuses' => $tracking_status,
         ]);
     }
 
     /**
      * Update the specified tracking status.
      */
-    public function update(
-        Request $request,
-        TrackingStatus $status
-    ): RedirectResponse {
+    public function update(Request $request, TrackingStatus $tracking_status): RedirectResponse
+    {
         $validated = $request->validate([
             'category' => ['required', 'string', 'max:30'],
             'code' => [
                 'required',
                 'string',
                 'max:100',
-                Rule::unique('tracking_status', 'code')
-                    ->where(fn ($query) => $query->where('category', $request->string('category')))
-                    ->ignore($status->id),
+                Rule::unique('tracking_statuses', 'code')
+                    ->where(fn ($query) => $query->where('category', $request->input('category'))
+                    )
+                    ->ignore($tracking_status->id),
             ],
             'name' => ['required', 'string', 'max:255'],
-            'sort_order' => ['required', 'integer', 'min:0'],
             'is_active' => ['boolean'],
         ]);
-
-        $status->update($validated);
+        $tracking_status->update($validated);
 
         return redirect()
             ->route('tracking-status.index')
@@ -108,9 +111,9 @@ class TrackingStatusController extends Controller
     /**
      * Remove the specified tracking status.
      */
-    public function destroy(TrackingStatus $status): RedirectResponse
+    public function destroy(TrackingStatus $tracking_status): RedirectResponse
     {
-        $status->delete();
+        $tracking_status->delete();
 
         return redirect()
             ->route('tracking-status.index')

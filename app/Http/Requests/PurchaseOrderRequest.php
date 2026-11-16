@@ -42,7 +42,7 @@ class PurchaseOrderRequest extends FormRequest
             ],
 
             'category' => [
-                'nullable',
+                'required',
                 'string',
                 'max:50',
             ],
@@ -191,6 +191,7 @@ class PurchaseOrderRequest extends FormRequest
             'po_number.max' => 'PO Number may not be greater than 100 characters.',
 
             'category.string' => 'Category must be a string.',
+            'category.required' => 'Category is required.',
             'category.max' => 'Category may not be greater than 50 characters.',
 
             'po_date.required' => 'PO Date is required.',

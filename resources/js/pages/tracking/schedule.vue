@@ -11,7 +11,23 @@ import {
     Truck,
 } from 'lucide-vue-next';
 import PublicHeader from '@/components/public/PublicHeader.vue';
+interface po {
+    id: number;
+    po_number: string;
+    po_date: Date | null;
+    delivery_date: Date | null;
+    arrival_date:  Date | null;
+}
 
+interface local_shipment {
+    shipment_number: string;
+    purchase_orders: po[];
+    delivery_order_number: string | null;
+    etd: Date | null;
+    atd: Date | null;
+    status_document: string | null;
+    tracking_status: string | null;
+}
 interface Shipment {
     id: number;
     shipment_number: string;
@@ -31,10 +47,14 @@ interface Shipment {
     }[];
 }
 
-const props = defineProps<{ shipments?: Shipment[] }>();
+const props = defineProps<{ 
+    shipments?: Shipment[]
+    local_shipments?: local_shipment[]
+ }>();
 const search = ref('');
 const selectedDate = ref<string | null>(null);
 const shipments = computed(() => props.shipments ?? []);
+const localShipments = computed(() => props.local_shipments ?? []);
 const filteredShipments = computed(() =>
     shipments.value.filter((shipment) => {
         const keyword = search.value.trim().toLowerCase();

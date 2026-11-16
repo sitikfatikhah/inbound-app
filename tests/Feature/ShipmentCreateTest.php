@@ -500,3 +500,53 @@ test('project monitoring only includes shipment items with sample products', fun
             ->where('projects.0.quantity', 4)
             ->where('projects.0.shipment.shipment_number', 'SHP-PROJECT-001'));
 });
+
+test('shipment show includes allocated purchase order item details and status history', function () {
+    $user = User::factory()->create();
+    $supplier = Suppliers::factory()->create();
+    $product = Products::query()->create([
+        'product_code' => 'PROD-SHIP-SHOW-001',
+        'product_name' => 'Shipment detail item',
+        'unit' => 'PCS',
+        'is_active' => true,
+    ]);
+    $purchaseOrder = PurchaseOrders::query()->create([
+        'supplier_id' => $supplier->id,
+        'po_number' => 'PO-SHIP-SHOW-001',
+        'category' => 'IMPORT',
+        'po_date' => '2026-10-14',
+        'status' => '1',
+    ]);
+    $purchaseOrderItem = $purchaseOrder->items()->create([
+        'product_id' => $product->id,
+        'product_code' => $product->product_code,
+        'product_name' => $product->product_name,
+        'quantity' => 10,
+        'backorder_qty' => 10,
+        'remaining_qty' => 6,
+        'total_allocated' => 4,
+        'unit' => 'PCS',
+    ]);
+    $shipment = Shipments::query()->create([
+        'shipment_number' => 'SHP-SHOW-001',
+    ]);
+    $shipment->shipmentContainers()->create([
+        'purchase_order_item_id' => $purchaseOrderItem->id,
+        'product_code' => $product->product_code,
+        'quantity' => 4,
+        'container_number' => 'CONT-SHOW-001',
+    ]);
+    $shipment->statusHistories()->create([
+        'status' => 'Tracking status: in transit',
+        'status_date' => now(),
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('shipments.show', $shipment))
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('shipment/show')
+            ->where('shipment.shipment_containers.0.purchase_order_item.product_name', 'Shipment detail item')
+            ->where('shipment.shipment_containers.0.purchase_order_item.unit', 'PCS')
+            ->where('shipment.shipment_containers.0.container_number', 'CONT-SHOW-001')
+            ->where('shipment.status_histories.0.status', 'Tracking status: in transit'));
+});

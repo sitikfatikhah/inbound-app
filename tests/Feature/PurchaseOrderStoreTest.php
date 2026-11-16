@@ -20,6 +20,7 @@ it('stores a purchase order with a string status', function () {
     $response = $this->actingAs($user)->post(route('po.store'), [
         'supplier_id' => $supplier->id,
         'po_number' => 'PO-TEST-001',
+        'category' => 'IMPORT',
         'po_date' => '2026-09-10',
         'currency' => 'USD',
         'exchange_rate' => '1.00',
@@ -87,6 +88,7 @@ it('replaces purchase order items when updating', function () {
     $purchaseOrder = PurchaseOrders::query()->create([
         'supplier_id' => $supplier->id,
         'po_number' => 'PO-TEST-002',
+        'category' => 'IMPORT',
         'po_date' => '2026-09-10',
         'status' => 'DRAFT',
     ]);
@@ -100,6 +102,7 @@ it('replaces purchase order items when updating', function () {
     $response = $this->actingAs($user)->put(route('po.update', $purchaseOrder), [
         'supplier_id' => $supplier->id,
         'po_number' => 'PO-TEST-002',
+        'category' => 'IMPORT',
         'po_date' => '2026-09-10',
         'status' => 'DRAFT',
         'items' => [
@@ -126,4 +129,15 @@ it('replaces purchase order items when updating', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->component('po/show')
             ->has('purchaseOrder.items', 2));
+});
+
+it('requires a category when saving a purchase order', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->post(route('po.store'), [])
+        ->assertRedirect()
+        ->assertSessionHasErrors(['category', 'items']);
+
+    expect(PurchaseOrders::query()->exists())->toBeFalse();
 });
