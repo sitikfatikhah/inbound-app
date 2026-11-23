@@ -22,9 +22,20 @@ class ShipmentService implements ShipmentServiceInterface
         return DB::transaction(function () use ($data): Shipments {
             $containers = $data['containers'] ?? [];
             $milestones = $data['milestones'] ?? [];
-            $shipment = Shipments::create(collect($data)
+            $shipmentData = collect($data)
                 ->except(['location', 'country', 'containers', 'milestones', 'purchase_order_ids'])
-                ->all());
+                ->all();
+            $shipmentData['original_eta'] = $shipmentData['eta'] ?? null;
+            $shipmentData['original_etd'] = $shipmentData['etd'] ?? null;
+            $shipment = Shipments::create($shipmentData);
+
+            foreach (config('documents.required_by_type.import', []) as $documentType) {
+                $shipment->shipmentDocuments()->create([
+                    'document_type' => $documentType,
+                    'document_name' => config("documents.types.$documentType", $documentType),
+                    'verification_status' => 'missing',
+                ]);
+            }
 
             $shipment->purchaseOrders()->sync($this->storeAllocations($shipment, $containers));
             $this->syncMilestones($shipment, $milestones);
@@ -232,6 +243,7 @@ class ShipmentService implements ShipmentServiceInterface
                 'product_code' => $item->product_code ?? (string) $item->product_id,
                 'quantity' => $allocation['quantity'],
                 'container_number' => $container['container_number'] ?? null,
+                'container_size' => $container['container_size'] ?? null,
                 'seal_number' => $container['container_seal_number'] ?? null,
             ]);
 

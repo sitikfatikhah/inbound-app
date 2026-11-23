@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Shipments extends Model
 {
@@ -23,6 +24,8 @@ class Shipments extends Model
         'voyage_number',
         'etd',
         'eta',
+        'original_etd',
+        'original_eta',
         'atd',
         'ata',
         'status_document',
@@ -33,6 +36,8 @@ class Shipments extends Model
     protected $casts = [
         'etd' => 'date',
         'eta' => 'date',
+        'original_etd' => 'date',
+        'original_eta' => 'date',
         'atd' => 'date',
         'ata' => 'date',
     ];
@@ -79,8 +84,34 @@ class Shipments extends Model
             ->withTimestamps();
     }
 
+    public function items(): BelongsToMany
+    {
+        return $this->belongsToMany(PurchaseOrderItems::class);
+    }
+
     public function shipmentContainers(): HasMany
     {
         return $this->hasMany(ShipmentContainers::class, 'shipment_id');
     }
+
+    public function shipmentDocuments(): HasMany
+    {
+        return $this->hasMany(ShipmentDocuments::class, 'shipment_id');
+    }
+
+    public function customsClearances(): HasMany
+    {
+        return $this->hasMany(CustomsClearance::class, 'shipment_id');
+    }
+
+    public function scheduleHistories(): HasMany
+    {
+        return $this->hasMany(ShipmentScheduleHistories::class, 'shipment_id')->latest();
+    }
+
+    public function warehouseReceipts(): HasMany
+    {
+        return $this->hasMany(WarehouseReceipts::class, 'shipment_id');
+    }
+
 }

@@ -10,7 +10,7 @@ class Regulations extends Model
         'title',
         'category',
         'description',
-        'file_path',
+        'document_file',
         'effective_date',
         'expiration_date',
         'notes',

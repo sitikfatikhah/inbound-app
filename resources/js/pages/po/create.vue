@@ -559,7 +559,6 @@ const handleSubmit = () => {
                             <option value="">
                                 Select Category
                             </option>
-
                             <option
                                 v-for="category in categoryOptions"
                                 :key="category.value"
@@ -639,6 +638,7 @@ const handleSubmit = () => {
                         <p
                             v-if="form.errors.exchange_rate"
                             class="text-sm text-destructive"
+                            :disabled="form.category === 'Local'"
                         >
                             {{ form.errors.exchange_rate }}
                         </p>

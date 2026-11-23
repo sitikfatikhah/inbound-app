@@ -15,10 +15,11 @@ return new class extends Migration
             $table->id();
             $table->foreignId('shipment_id')->constrained('shipments')->onDelete('cascade');
             $table->string('document_type');
-            $table->string('file_name');
+            $table->string('document_name');
             $table->string('document_number')->nullable();
             $table->date('document_date')->nullable();
-            $table->string('file_path');
+            $table->string('document_file')->nullable();
+            $table->string('verification_status', 30)->default('missing');
             $table->timestamps();
         });
     }

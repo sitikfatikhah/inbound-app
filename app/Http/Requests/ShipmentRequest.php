@@ -2,8 +2,11 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Shipments;
+use Carbon\Carbon;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 use Override;
 
 class ShipmentRequest extends FormRequest
@@ -142,6 +145,33 @@ class ShipmentRequest extends FormRequest
             'country' => ['nullable', 'string', 'max:255'],
             'remarks' => ['nullable', 'string'],
 
+        ];
+    }
+
+    public function after(): array
+    {
+        if ($this->isMethod('POST')) {
+            return [];
+        }
+
+        return [
+            function (Validator $validator): void {
+                $shipment = $this->route('shipment');
+
+                if (! $shipment instanceof Shipments) {
+                    return;
+                }
+
+                foreach (['eta', 'etd'] as $field) {
+                    if (! $this->filled($field) || $validator->errors()->has($field)) {
+                        continue;
+                    }
+
+                    if (Carbon::parse($this->input($field))->toDateString() !== $shipment->{$field}?->toDateString()) {
+                        $validator->errors()->add($field, 'Use the schedule revision form and provide a reason to change this date.');
+                    }
+                }
+            },
         ];
     }
 

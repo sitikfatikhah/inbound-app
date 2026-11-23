@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { Link } from '@inertiajs/vue3'
+import { create, edit as editShipment, show as showShipment } from '@/actions/App/Http/Controllers/ShipmentController'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -28,7 +29,25 @@ interface Shipment {
     status_document: string | null
     tracking_status: string | null
 }
-const props = defineProps<{ shipments?: Shipment[] }>()
+interface Insights {
+    average_inspection_duration_hours: number
+    document_completeness_percentage: number
+    average_eta_revision_frequency: number
+    average_schedule_deviation_days: number
+    average_customs_clearance_lead_time_days: number
+    most_common_delay_reason: { reason: string; count: number } | null
+}
+interface Notification {
+    type: 'critical' | 'warning' | 'complete'
+    shipment_id: number
+    shipment_number: string
+    message: string
+}
+const props = defineProps<{
+    shipments?: Shipment[]
+    insights?: Insights
+    notifications?: Notification[]
+}>()
 const search = ref('')
 const filteredShipments = computed(() => {
     const keyword = search.value.trim().toLowerCase()
@@ -45,12 +64,59 @@ const statusClass = (value: string | null) => { const status = value?.toLowerCas
         <div class="flex flex-wrap items-center justify-between gap-4">
             <div>
                 <h1 class="text-2xl font-semibold">Shipments</h1>
-                <p class="text-sm text-muted-foreground">Manage shipments, milestones, and status history.</p>
+                <p class="text-sm text-muted-foreground">Inbound tracking, documents, customs clearance, and schedule performance.</p>
             </div>
             <Button as-child>
-                <Link href="/shipments/create">Add Shipment</Link>
+                <Link :href="create.url()">Add Shipment</Link>
             </Button>
         </div>
+        <section v-if="props.insights" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <article class="rounded-lg border bg-card p-4">
+                <p class="text-sm text-muted-foreground">Average inspection duration</p>
+                <p class="mt-2 text-2xl font-semibold">{{ props.insights.average_inspection_duration_hours }} <span class="text-sm font-normal">hours</span></p>
+            </article>
+            <article class="rounded-lg border bg-card p-4">
+                <p class="text-sm text-muted-foreground">Document completeness</p>
+                <p class="mt-2 text-2xl font-semibold">{{ props.insights.document_completeness_percentage }}%</p>
+            </article>
+            <article class="rounded-lg border bg-card p-4">
+                <p class="text-sm text-muted-foreground">Average ETA revisions per shipment</p>
+                <p class="mt-2 text-2xl font-semibold">{{ props.insights.average_eta_revision_frequency }}</p>
+            </article>
+            <article class="rounded-lg border bg-card p-4">
+                <p class="text-sm text-muted-foreground">Average schedule deviation</p>
+                <p class="mt-2 text-2xl font-semibold">{{ props.insights.average_schedule_deviation_days }} <span class="text-sm font-normal">days</span></p>
+            </article>
+            <article class="rounded-lg border bg-card p-4">
+                <p class="text-sm text-muted-foreground">Customs clearance lead time</p>
+                <p class="mt-2 text-2xl font-semibold">{{ props.insights.average_customs_clearance_lead_time_days }} <span class="text-sm font-normal">days</span></p>
+            </article>
+            <article class="rounded-lg border bg-card p-4">
+                <p class="text-sm text-muted-foreground">Most common delay reason</p>
+                <p class="mt-2 font-semibold">{{ props.insights.most_common_delay_reason?.reason ?? 'No delay reasons recorded' }}</p>
+                <p v-if="props.insights.most_common_delay_reason" class="text-xs text-muted-foreground">{{ props.insights.most_common_delay_reason.count }} recorded revision(s)</p>
+            </article>
+        </section>
+        <section class="space-y-3" aria-labelledby="shipment-alerts-heading">
+            <div class="flex items-center justify-between">
+                <h2 id="shipment-alerts-heading" class="text-lg font-semibold">Shipment notifications</h2>
+                <span class="text-sm text-muted-foreground">{{ props.notifications?.length ?? 0 }} notifications</span>
+            </div>
+            <p v-if="!props.notifications?.length" class="rounded-lg border p-4 text-sm text-muted-foreground">No shipment notifications.</p>
+            <Link
+                v-for="notification in props.notifications ?? []"
+                :key="`${notification.type}-${notification.shipment_id}-${notification.message}`"
+                :href="showShipment.url(notification.shipment_id)"
+                class="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-4 transition-colors hover:bg-muted/50"
+                :class="notification.type === 'critical' ? 'border-destructive/50 bg-destructive/5' : notification.type === 'warning' ? 'border-amber-500/40 bg-amber-500/5' : 'border-green-600/30 bg-green-500/5'"
+            >
+                <span>
+                    <strong class="mr-2 uppercase">{{ notification.type }}</strong>
+                    {{ notification.message }}
+                </span>
+                <span class="text-sm font-medium">{{ notification.shipment_number }}</span>
+            </Link>
+        </section>
         <Input v-model="search" type="search" placeholder="Search shipments..." class="max-w-sm" />
         <div class="overflow-x-auto rounded-md border">
             <Table>
@@ -109,10 +175,10 @@ const statusClass = (value: string | null) => { const status = value?.toLowerCas
                                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem as-child>
-                                            <Link :href="`/shipments/${shipment.id}`">View</Link>
+                                            <Link :href="showShipment.url(Number(shipment.id))">View</Link>
                                         </DropdownMenuItem>
                                         <DropdownMenuItem as-child>
-                                            <Link :href="`/shipments/${shipment.id}/edit`">Edit</Link>
+                                            <Link :href="editShipment.url(Number(shipment.id))">Edit</Link>
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
                                 </DropdownMenu>

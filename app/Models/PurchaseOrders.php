@@ -47,11 +47,6 @@ class PurchaseOrders extends Model
             ->withTimestamps();
     }
 
-    public function localDeliveries(): HasMany
-    {
-        return $this->hasMany(LocalDelivery::class, 'purchase_order_id');
-    }
-
     public function localShipments(): HasMany
     {
         return $this->hasMany(LocalShipments::class, 'purchase_order_id');

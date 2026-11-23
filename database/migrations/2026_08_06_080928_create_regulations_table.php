@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('title');
             $table->string('category');
             $table->text('description')->nullable();
-            $table->string('file_path')->nullable();
+            $table->string('document_file')->nullable();
             $table->date('effective_date')->nullable();
             $table->date('expiration_date')->nullable();
             $table->text('notes')->nullable();

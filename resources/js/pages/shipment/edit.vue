@@ -31,6 +31,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 
+
 interface Option {
   id: number
   [key: string]: string | number
@@ -91,6 +92,8 @@ interface Shipment {
   voyage_number: string | null
   etd: string | null
   eta: string | null
+  original_etd: string | null
+  original_eta: string | null
   atd: string | null
   ata: string | null
   status_document: string | null
@@ -175,8 +178,6 @@ const form = useForm({
   invoice_number: props.shipment.invoice_number ?? '',
   vessel_name: props.shipment.vessel_name ?? '',
   voyage_number: props.shipment.voyage_number ?? '',
-  etd: props.shipment.etd ?? '',
-  eta: props.shipment.eta ?? '',
   atd: props.shipment.atd ?? '',
   ata: props.shipment.ata ?? '',
   milestones: (props.milestones ?? []).map((milestone) => ({ ...milestone })),
@@ -958,12 +959,14 @@ const submit = () => {
 
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div class="space-y-2">
-                <label class="text-sm font-medium">ETD</label>
-                <Input v-model="form.etd" type="date" />
+                <p class="text-sm font-medium">ETD</p>
+                <p class="rounded-md border bg-muted/30 px-3 py-2 text-sm">{{ props.shipment.etd?.slice(0, 10) ?? 'Not set' }}</p>
+                <p class="text-xs text-muted-foreground">Initial: {{ props.shipment.original_etd?.slice(0, 10) ?? 'Not recorded' }}</p>
               </div>
               <div class="space-y-2">
-                <label class="text-sm font-medium">ETA</label>
-                <Input v-model="form.eta" type="date" />
+                <p class="text-sm font-medium">ETA</p>
+                <p class="rounded-md border bg-muted/30 px-3 py-2 text-sm">{{ props.shipment.eta?.slice(0, 10) ?? 'Not set' }}</p>
+                <p class="text-xs text-muted-foreground">Initial: {{ props.shipment.original_eta?.slice(0, 10) ?? 'Not recorded' }}</p>
               </div>
               <div class="space-y-2">
                 <label class="text-sm font-medium">
@@ -978,6 +981,9 @@ const submit = () => {
                 <Input v-model="form.ata" type="date" />
               </div>
             </div>
+            <p class="mt-4 text-sm text-muted-foreground">
+              To revise ETA or ETD, use the schedule revision form on the shipment details page. A reason is required and the change will be recorded.
+            </p>
             <div class="mt-8 space-y-4">
               <div class="flex items-center justify-between gap-3">
                 <div>

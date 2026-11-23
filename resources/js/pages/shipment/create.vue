@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
 import { ArrowLeft, Plus, Trash2 } from 'lucide-vue-next'
+import { index, store as createShipment } from '@/actions/App/Http/Controllers/ShipmentController'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -15,7 +16,9 @@ import {
 import {
   Tabs, TabsContent, TabsList, TabsTrigger,
 } from '@/components/ui/tabs'
-import { index } from '@/actions/App/Http/Controllers/ShipmentController'
+import shipmentDocuments from '@/routes/shipment-documents'
+import ShipmentStatusHistory from '@/components/shipment/ShipmentStatusHistory.vue'
+
 
 interface Option {
   id: number
@@ -23,6 +26,8 @@ interface Option {
 }
 interface PurchaseOrder {
   id: number
+  supplier_id: number
+  supplier: Option | null
   po_number: string
 }
 interface PurchaseOrderItem {
@@ -31,6 +36,7 @@ interface PurchaseOrderItem {
   product_code: string
   product_name: string
   quantity: number
+  remaining_qty?: number
   backorder_qty: number
   unit: string
   hs_code: string
@@ -47,6 +53,7 @@ interface ContainerItem {
 interface ShipmentContainer {
   container_number: string
   container_seal_number: string
+  container_size?: string
   items: ContainerItem[]
 }
 interface ShipmentMilestone {
@@ -57,21 +64,64 @@ interface ShipmentMilestone {
   remarks: string
 }
 
+interface shipmentDocuments {
+  document_name: string
+  document_type: string
+  document_file: string
+  document_date: Date
+}
+
+
 const props = defineProps<{
   shipment_number: string
   purchaseOrders?: PurchaseOrder[]
-  PurchaseOrderItems?: PurchaseOrderItem[]
+  items?: PurchaseOrderItem[]
   forwarders?: Option[]
   shippingLines?: Option[]
   ports?: Option[]
   warehouses?: Option[]
+  documentTypes?: Record<string, string>
+  requiredDocumentTypes?: string[]
 }>()
+
+const availablePurchaseOrders = computed(() =>
+  purchaseOrders.value.filter(
+    (purchaseOrder: PurchaseOrder) => getitems(purchaseOrder.id).length > 0,
+  ),
+)
+
+const getitems = (purchaseOrderId: number | null) => {
+  if (!purchaseOrderId) {
+    return []
+  }
+
+  return poItems.value.filter(
+    (item) =>
+      Number(item.purchase_order_id) === Number(purchaseOrderId) &&
+      getRemainingQuantity(item) > 0,
+  )
+}
+const getRemainingQuantity = (item: PurchaseOrderItem) =>
+    Math.max(0, Number(item.remaining_qty ?? item.quantity ?? 0));
 
 const createEmptyContainer = (): ShipmentContainer => ({
   container_number: '',
   container_seal_number: '',
+  container_size: '',
   items: [],
 })
+const statusDocument = computed(() => {
+  const total = props.requiredDocumentTypes?.length ?? 0
+
+  return total > 0
+    ? `Missing (0/${total} documents uploaded)`
+    : 'No required documents'
+})
+const statusHistories = () => {
+   if (ShipmentStatusHistory.length > 0) {
+    return ShipmentStatusHistory[0].status
+  }
+}
 
 const form = useForm({
   shipment_number: props.shipment_number,
@@ -90,8 +140,6 @@ const form = useForm({
   atd: '',
   ata: '',
   milestones: [] as ShipmentMilestone[],
-  status_document: 'purchase order created',
-  tracking_status: 'not shipped',
   remarks: '',
   containers: [createEmptyContainer()] as ShipmentContainer[],
 })
@@ -112,19 +160,10 @@ const addMilestone = () => form.milestones.push({
   remarks: '',
 })
 
-const statusOptions = [
-  'PL & INV created', 'BL Draft', 'BL Final', 'LCC created', 'PTDI', 'sent document',
-  'draft PIB', 'Billing Bea Cukai', 'BPN', 'customs clearance', 'Green Lane - SPPB',
-  'Red Lane - SPJM', 'NPD', 'NHI', 'SPTNP', 'SPKTNP', 'SPBL', 'Gate Out', 'Others',
-]
-const trackingStatusOptions = [
-  'not shipped', 'gate out empty', 'gate in', 'loaded on vessel', 'vessel departed',
-  'in transit', 'vessel arrived', 'discharged', 'delivered', 'gate out for delivery',
-  'empty container return', 'completed', 'on hold', 'cancelled',
-]
+const trackingStatus = computed(() => 'not shipped')
 
 const purchaseOrders = computed(() => props.purchaseOrders ?? [])
-const poItems = computed(() => props.PurchaseOrderItems ?? [])
+const poItems = computed(() => props.items ?? [])
 const forwarderOptions = computed(() => props.forwarders ?? [])
 const shippingLineOptions = computed(() => props.shippingLines ?? [])
 const portOptions = computed(() => props.ports ?? [])
@@ -174,7 +213,7 @@ const submit = () => {
   if (form.containers.some((container) => container.items.some((row) =>
     row.purchase_order_item_id === null || Number(row.quantity) <= 0 || !Number.isFinite(Number(row.quantity))
   ))) return
-  form.post('/shipments', { preserveScroll: true })
+  form.post(createShipment.url(), { preserveScroll: true })
 }
 </script>
 
@@ -212,18 +251,38 @@ const submit = () => {
           <div class="space-y-2"><label class="text-sm font-medium">Voyage Number</label><Input v-model="form.voyage_number" /></div>
           <div class="space-y-2">
             <label class="text-sm font-medium">Status Document</label>
-            <Select v-model="form.status_document">
+
+            <Input
+              :model-value="statusDocument"
+              disabled
+              class="bg-muted"
+            />
+            <p class="text-xs text-muted-foreground">
+              Status akan diperbarui setelah dokumen diunggah dan diverifikasi.
+            </p>
+          </div>
+            
+            <!-- <Select v-model="form.status_document">
               <SelectTrigger class="w-full"><SelectValue placeholder="Select status" /></SelectTrigger>
               <SelectContent><SelectGroup><SelectLabel>Status Document</SelectLabel><SelectItem v-for="status in statusOptions" :key="status" :value="status">{{ status }}</SelectItem></SelectGroup></SelectContent>
-            </Select>
-          </div>
+            </Select> -->
+
           <div class="space-y-2">
             <label class="text-sm font-medium">Tracking Status</label>
-            <Select v-model="form.tracking_status">
+
+            <Input
+              :model-value="trackingStatus"
+              disabled
+              class="bg-muted"
+            />
+            <p class="text-xs text-muted-foreground">
+              Tracking status akan diperbarui berdasarkan aktivitas perjalanan shipment.
+            </p>
+          </div>
+            <!-- <Select v-model="form.tracking_status">
               <SelectTrigger class="w-full"><SelectValue placeholder="Select tracking status" /></SelectTrigger>
               <SelectContent><SelectGroup><SelectLabel>Tracking Status</SelectLabel><SelectItem v-for="status in trackingStatusOptions" :key="status" :value="status">{{ status }}</SelectItem></SelectGroup></SelectContent>
-            </Select>
-          </div>
+            </Select> -->
         </div>
       </section>
 
@@ -246,9 +305,10 @@ const submit = () => {
                 <h3 class="font-semibold">Container {{ containerIndex + 1 }}</h3>
                 <Button type="button" variant="ghost" size="icon" :disabled="form.containers.length <= 1" aria-label="Remove container" @click="removeContainer(containerIndex)"><Trash2 class="h-4 w-4 text-destructive" /></Button>
               </div>
-              <div class="grid gap-4 sm:grid-cols-2">
+              <div class="grid gap-4 sm:grid-cols-3">
                 <div class="space-y-2"><label class="text-sm font-medium">Container Number</label><Input v-model="container.container_number" placeholder="e.g. MSCU1234567" /><p v-if="form.errors[`containers.${containerIndex}.container_number`]" class="text-xs text-destructive">{{ form.errors[`containers.${containerIndex}.container_number`] }}</p></div>
                 <div class="space-y-2"><label class="text-sm font-medium">Container Seal Number</label><Input v-model="container.container_seal_number" placeholder="Enter seal number" /><p v-if="form.errors[`containers.${containerIndex}.container_seal_number`]" class="text-xs text-destructive">{{ form.errors[`containers.${containerIndex}.container_seal_number`] }}</p></div>
+                <div class="space-y-2"><label class="text-sm font-medium">Container Size</label><Input v-model="container.container_size" placeholder="e.g. 20ft, 40ft" /><p v-if="form.errors[`containers.${containerIndex}.container_size`]" class="text-xs text-destructive">{{ form.errors[`containers.${containerIndex}.container_size`] }}</p></div>
               </div>
 
               <div class="space-y-4 border-t pt-4">
@@ -269,7 +329,7 @@ const submit = () => {
                         <TableHead class="w-12">No.</TableHead>
                         <TableHead class="min-w-[300px]">Purchase Order</TableHead>
                         <TableHead class="min-w-[300px]">Purchase Order Item</TableHead>
-                        <TableHead class="w-[180px]">Container Quantity</TableHead>
+                        <TableHead class="w-[180px]">Quantity</TableHead>
                         <TableHead class="min-w-[360px]">Unit</TableHead>
                         <TableHead class="w-[72px] text-right">Action</TableHead>
                       </TableRow>
@@ -283,27 +343,44 @@ const submit = () => {
 
                         <TableCell class="align-middle">
                           <select
-                            :value="row.purchase_order_id ?? ''"
-                            class="flex h-10 w-full min-w-0 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              v-model.number="row.purchase_order_id"
+                              class="flex h-10 w-full min-w-0 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              @change="
+                                  row.purchase_order_item_id = null;
+                                  row.quantity = null;
+                                "
                           >
-                            <option value="" disabled>Select PO item</option>
-                      
+                            <option value="" disabled>
+                              {{ availablePurchaseOrders.length ? 'Select Purchase Order' : 'No import PO available' }}
+                            </option>
+                            <option v-for="purchaseOrder in availablePurchaseOrders" :value="purchaseOrder.id" :key="purchaseOrder.id">
+                              {{ purchaseOrder.supplier?.supplier_name }} - {{ purchaseOrder.po_number }}
+                            </option>
                           </select>
                         </TableCell>
+
                         <TableCell class="align-middle">
                           <select
-                            :value="row.purchase_order_item_id ?? ''"
+                            v-model.number="row.purchase_order_item_id"
                             class="flex h-10 w-full min-w-0 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            :disabled="!row.purchase_order_id"
+                            @change="row.quantity = null"
                           >
                             <option value="" disabled>Select PO item</option>
-                      
+                            <option
+                              v-for="item in getitems(row.purchase_order_id)"
+                              :key="item.id"
+                              :value="item.id"
+                            >
+                              {{ item.product_code }} — {{ item.product_name }}
+                              ({{ getRemainingQuantity(item) }} {{ item.unit }} available)
+                            </option>
                           </select>
-                   
                         </TableCell>
 
                         <TableCell class="align-middle">
                           <Input
-                            :model-Value="row.quantity"
+                            :model-value="row.quantity ?? ''"
                             @update:model-value="row.quantity = $event === '' ? null : Number($event)"
                             type="number"
                             min="0.01"
@@ -312,6 +389,9 @@ const submit = () => {
                             placeholder="0"
                             class="min-w-[120px]"
                           />
+                        </TableCell>
+                        <TableCell class="align-middle text-sm text-muted-foreground">
+                          {{ poItems.find((item) => item.id === row.purchase_order_item_id)?.unit ?? '-' }}
                         </TableCell>
                         <TableCell class="text-right align-middle">
                           <Button
@@ -344,7 +424,6 @@ const submit = () => {
             </div>
             <p class="text-xs text-muted-foreground">The PO line's quantity, product details, and total_price are not edited here. On save, the server must deduct the summed container quantity from that line's backorder_qty inside a database transaction.</p>
           </TabsContent>
-
           <TabsContent value="schedule" class="pt-5">
             <h2 class="mb-4 font-semibold">Shipment Schedule</h2>
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

@@ -84,15 +84,7 @@ class LocalShipmentsController extends Controller
             'warehouse:id,warehouse_name',
             'statusHistories',
         ]);
-        dd($local_shipment->items->map(fn ($item): array => [
-            'purchase_order_id' => $item->purchase_order_id,
-            'purchase_order_item_id' => $item->purchase_order_item_id,
-            'product_code' => $item->purchaseOrderItem->product_code,
-            'product_name' => $item->purchaseOrderItem->product_name,
-            'product_id' => $item->purchaseOrderItem->product_id,
-            'quantity' => (float) $item->quantity,
-            'unit' => $item->purchaseOrderItem->unit,
-        ])->values());
+
         return Inertia::render('local-shipment/show', [
             'localShipment' => $local_shipment,
         ]);
@@ -127,7 +119,6 @@ class LocalShipmentsController extends Controller
             'purchaseOrderItems' => $this->purchaseOrderItems($local_shipment),
             ...$this->lookupOptions(),
         ]);
-        dd($local_shipment);
     }
 
     public function update(LocalShipmentRequest $request, LocalShipments $local_shipment): RedirectResponse

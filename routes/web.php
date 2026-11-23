@@ -10,6 +10,9 @@ use App\Http\Controllers\PortController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\ShipmentController;
+use App\Http\Controllers\ShipmentCustomsClearancesController;
+use App\Http\Controllers\ShipmentDocumentController;
+use App\Http\Controllers\ShipmentScheduleHistoriesController;
 use App\Http\Controllers\ShippingLineController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\TrackingController;
@@ -88,7 +91,27 @@ Route::prefix('shipments')
             ->name('edit');
         Route::post('/', 'store')->name('store');
         Route::put('/{shipment}', 'update')->name('update');
+        Route::patch('/{shipment}/tracking-status', 'updateTrackingStatus')->name('tracking-status.update');
         Route::delete('/{shipment}', 'destroy')->name('destroy');
+        Route::put('/{shipment}/customs-clearance', [ShipmentCustomsClearancesController::class, 'update'])
+            ->whereNumber('shipment')
+            ->name('customs-clearance.update');
+        Route::post('/{shipment}/schedule-revisions', [ShipmentScheduleHistoriesController::class, 'store'])
+            ->whereNumber('shipment')
+            ->name('schedule-revisions.store');
+    });
+Route::prefix('shipment-documents')
+    ->name('shipment-documents.')
+    ->controller(ShipmentDocumentController::class)
+    ->middleware(['auth', 'verified'])
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/{shipment_document}', 'show')
+            ->whereNumber('shipment_document')
+            ->name('show');
+        Route::post('/', 'store')->name('store');
+        Route::put('/{shipment_document}', 'update')->name('update');
+        Route::delete('/{shipment_document}', 'destroy')->name('destroy');
     });
 Route::prefix('local-shipment')
     ->name('local-shipment.')
@@ -107,23 +130,6 @@ Route::prefix('local-shipment')
         Route::put('/{local_shipment}', 'update')->name('update');
         Route::delete('/{local_shipment}', 'destroy')->name('destroy');
     });
-// Route::prefix('local-delivery')
-//     ->name('local_delivery.')
-//     ->controller(LocalDeliveryController::class)
-//     ->middleware(['auth', 'verified'])
-//     ->group(function () {
-//         Route::get('/', 'index')->name('index');
-//         Route::get('/create', 'create')->name('create');
-//         Route::get('/{local_delivery}', 'show')
-//             ->whereNumber('local_delivery')
-//             ->name('show');
-//         Route::get('/{local_delivery}/edit', 'edit')
-//             ->whereNumber('local_delivery')
-//             ->name('edit');
-//         Route::post('/', 'store')->name('store');
-//         Route::put('/{local_delivery}', 'update')->name('update');
-//         Route::delete('/{local_delivery}', 'destroy')->name('destroy');
-//     });
 
 Route::prefix('forwarders')
     ->name('forwarders.')
