@@ -6,6 +6,7 @@ use App\Http\Requests\PurchaseOrderRequest;
 use App\Models\Products;
 use App\Models\PurchaseOrders;
 use App\Models\Suppliers;
+use App\Models\User;
 use App\Services\PurchaseOrderService;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -96,13 +97,20 @@ class PurchaseOrderController extends Controller
      * Display the specified purchase order.
      */
     public function show(
+        User $user,
         PurchaseOrders $purchaseOrder
     ): Response {
+        abort_unless(
+            $user->can('purchase-order.view')
+        && $purchaseOrder->created_by === $user->id,
+        403
+        );
+        
         $purchaseOrder->load([
             'supplier',
             'items.product',
         ]);
-
+        
         return Inertia::render('po/show', [
             'purchaseOrder' => $purchaseOrder,
             'items' => $purchaseOrder->items,

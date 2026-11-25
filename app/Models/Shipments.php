@@ -99,9 +99,14 @@ class Shipments extends Model
         return $this->hasMany(ShipmentDocuments::class, 'shipment_id');
     }
 
-    public function customsClearances(): HasMany
+    public function customsClearance(): HasOne
     {
-        return $this->hasMany(CustomsClearance::class, 'shipment_id');
+        return $this->hasOne(ShipmentCustomsClearances::class, 'shipment_id');
+    }
+
+    public function pibClearance(): HasOne
+    {
+        return $this->hasOne(CustomsClearances::class, 'shipment_id');
     }
 
     public function scheduleHistories(): HasMany
@@ -113,5 +118,4 @@ class Shipments extends Model
     {
         return $this->hasMany(WarehouseReceipts::class, 'shipment_id');
     }
-
 }

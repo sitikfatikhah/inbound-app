@@ -122,16 +122,40 @@ class ShipmentService implements ShipmentServiceInterface
 
     public function generateShipmentNumber(): string
     {
-        $latestShipment = Shipments::latest()->first();
+        return DB::transaction(function () {
+            $today = now()->toDateString();
 
-        if ($latestShipment) {
-            $lastNumber = (int) substr($latestShipment->shipment_number, -4);
-            $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
-        } else {
-            $newNumber = '0001';
-        }
+            // Pastikan sequence untuk tanggal hari ini tersedia.
+            DB::table('shipment_number_sequences')
+                ->insertOrIgnore([
+                    'sequence_date' => $today,
+                    'last_number' => 0,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
 
-        return 'SHP-'.date('Ymd').'-'.$newNumber;
+            // Lock baris sequence agar tidak digunakan
+            // secara bersamaan oleh transaksi lain.
+            $sequence = DB::table('shipment_number_sequences')
+                ->where('sequence_date', $today)
+                ->lockForUpdate()
+                ->first();
+
+            $nextNumber = $sequence->last_number + 1;
+
+            DB::table('shipment_number_sequences')
+                ->where('sequence_date', $today)
+                ->update([
+                    'last_number' => $nextNumber,
+                    'updated_at' => now(),
+                ]);
+
+            return sprintf(
+                'SHP-%s-%04d',
+                now()->format('Ymd'),
+                $nextNumber
+            );
+        });
     }
 
     public function getPurchaseOrderItems(): array

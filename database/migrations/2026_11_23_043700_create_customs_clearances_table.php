@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('customs_clearances', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('shipment_id')->constrained('shipments')->onDelete('cascade');
+            $table->foreignId('shipment_id')->constrained('shipments')->cascadeOnDelete();
             $table->string('pib_number')->nullable();
             $table->date('pib_date')->nullable();
-            $table->enum('penjaluran', ['Hijau', 'Merah'])->nullable();
+            $table->enum('customs_channel', ['Green Line', 'Red Line'])->nullable();
             $table->string('customs_status')->nullable();
             $table->string('attachment_path')->nullable();
             $table->dateTime('inspection_start')->nullable();

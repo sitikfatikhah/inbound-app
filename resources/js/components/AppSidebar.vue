@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
-import { Box, ChartNoAxesCombinedIcon, MessageSquareDot } from 'lucide-vue-next';
+import { Box, ChartNoAxesCombinedIcon, Form, HatGlasses, MessageSquareDot } from 'lucide-vue-next';
 
 const mainNavItems: NavItem[] = [
     {
@@ -85,6 +85,18 @@ const transactionItems: NavItem[] = [
         href: '/tracking/warehouse',
         icon: Warehouse,
     },
+    
+    {
+        title: 'Custom Clearance',
+        href: '/customs-clearance/',
+        icon: Form,
+    },
+    {
+        title: 'Custom Clearance Response',
+        href: '/customs-clearance-response/',
+        icon: HatGlasses,
+    },
+
 ];
 
 const userManagementItems: NavItem[] = [

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreShipmentDocumentRequest;
 use App\Http\Requests\UpdateShipmentDocumentRequest;
 use App\Models\ShipmentDocuments;
+use App\Models\Shipments;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -21,6 +22,19 @@ class ShipmentDocumentController extends Controller
                 ->with('shipment:id,shipment_number')
                 ->latest()
                 ->paginate(15),
+        ]);
+    }
+
+    public function create()
+    {
+        $shipment = Shipments::latest()->get();
+
+        return Inertia::render('shipment-documents/create', [
+            'shipment' => Shipments::query()
+                ->select('id', 'bl_number', 'invoice_number')
+                ->orderBy('bl_number')
+                ->get(),
+        
         ]);
     }
 

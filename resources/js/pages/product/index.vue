@@ -202,7 +202,7 @@ const filteredProducts = computed(() => {
                             <div class="flex flex-col items-center justify-center gap-2">
                                 <p class="font-medium text-muted-foreground">
                                     {{ search.trim() ? 'No products match your search criteria.' : 'No products found.' }}
-                                </p>
+C</p>
 
                                 <p class="text-sm text-muted-foreground">
                                     {{ search.trim() ? 'Try a different search term.' : 'There are currently no products to display.' }}

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\CustomsClearances;
+use App\Models\ShipmentCustomsClearances;
 use App\Models\Shipments;
 use App\Models\WarehouseReceipts;
 use Carbon\Carbon;
@@ -79,14 +79,14 @@ class DashboardController extends Controller
         |--------------------------------------------------------------------------
         |
         | Ambil shipment yang mempunyai customs clearance
-        | tetapi belum memiliki customs_clearance_date.
+        | tetapi belum memiliki tanggal SPPB.
         |
         | DISTINCT digunakan agar 1 shipment tidak dihitung lebih dari 1 kali.
         |
         */
 
-        $clearancePendingShipmentIds = CustomsClearances::query()
-            ->whereNull('customs_clearance_date')
+        $clearancePendingShipmentIds = ShipmentCustomsClearances::query()
+            ->whereNull('sppb_date')
             ->whereNotNull('shipment_id')
             ->select('shipment_id')
             ->distinct();

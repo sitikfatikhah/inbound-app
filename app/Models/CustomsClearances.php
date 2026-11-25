@@ -6,13 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class CustomsClearance extends Model
+class CustomsClearances extends Model
 {
     protected $fillable = [
         'shipment_id',
         'pib_number',
         'pib_date',
-        'penjaluran',
+        'customs_channel',
         'customs_status',
         'attachment_path',
         'inspection_start',
@@ -37,6 +37,6 @@ class CustomsClearance extends Model
         return $this->hasMany(
             CustomsClearanceResponses::class,
             'customs_clearance_id'
-        );
+        )->latest('response_date')->latest('id');
     }
 }

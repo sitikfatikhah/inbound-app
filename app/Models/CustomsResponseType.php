@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CustomsResponseType extends Model
 {
@@ -18,5 +19,10 @@ class CustomsResponseType extends Model
         return [
             'is_active' => 'boolean',
         ];
+    }
+
+    public function responses(): HasMany
+    {
+        return $this->hasMany(CustomsClearanceResponses::class, 'customs_response_type_id');
     }
 }

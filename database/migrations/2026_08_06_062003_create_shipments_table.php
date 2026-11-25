@@ -14,12 +14,12 @@ return new class extends Migration
         Schema::create('shipments', function (Blueprint $table) {
             $table->id();
             $table->string('shipment_number', 50)->unique();
-            $table->foreignId('forwarder_id')->constrained('forwarders')->onDelete('cascade')->nullable();
-            $table->foreignId('purchase_orders_id')->constrained('purchase_orders')->onDelete('cascade')->nullable();
-            $table->foreignId('shipping_line_id')->constrained('shipping_lines')->onDelete('cascade')->nullable();
-            $table->foreignId('port_of_loading_id')->constrained('ports')->onDelete('cascade')->nullable();
-            $table->foreignId('port_of_discharge_id')->constrained('ports')->onDelete('cascade')->nullable();
-            $table->foreignId('warehouse_id')->constrained('warehouses')->onDelete('cascade')->nullable();
+            $table->foreignId('forwarder_id')->nullable()->constrained('forwarders')->cascadeOnDelete();
+            $table->foreignId('purchase_orders_id')->nullable()->constrained('purchase_orders')->cascadeOnDelete();
+            $table->foreignId('shipping_line_id')->nullable()->constrained('shipping_lines')->cascadeOnDelete();
+            $table->foreignId('port_of_loading_id')->nullable()->constrained('ports')->cascadeOnDelete();
+            $table->foreignId('port_of_discharge_id')->nullable()->constrained('ports')->cascadeOnDelete();
+            $table->foreignId('warehouse_id')->nullable()->constrained('warehouses')->cascadeOnDelete();
             $table->string('invoice_number')->nullable();
             $table->string('bl_number')->nullable();
             $table->string('vessel_name')->nullable();
@@ -30,10 +30,9 @@ return new class extends Migration
             $table->date('ata')->nullable();
             $table->date('original_etd')->nullable();
             $table->date('original_eta')->nullable();
-            $table->date('ata')->nullable();
-            $table->string('status_document')->default('purchase order created')->nullable;
-            $table->string('tracking_status')->default('not shipped')->nullable;
-            $table->longText('remarks')->nullable;
+            $table->string('status_document')->default('purchase order created')->nullable();
+            $table->string('tracking_status')->default('not shipped')->nullable();
+            $table->longText('remarks')->nullable();
             $table->timestamps();
         });
     }

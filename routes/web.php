@@ -1,6 +1,9 @@
 <?php
 
+use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\ContainerController;
+use App\Http\Controllers\CustomsClearanceResponsesController;
+use App\Http\Controllers\CustomsClearancesController;
 use App\Http\Controllers\CustomsController;
 use App\Http\Controllers\CustomsPaymentController;
 use App\Http\Controllers\DashboardController;
@@ -19,7 +22,6 @@ use App\Http\Controllers\TrackingController;
 use App\Http\Controllers\TrackingStatusController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WarehouseController;
-use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -55,13 +57,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('custom-clearances', CustomsController::class);
     Route::resource('containers', ContainerController::class);
     Route::resource('payment', CustomsPaymentController::class);
-    Route::resource('activity-logs', ActivityLog::class)->only(['index', 'show']);
+    Route::resource('activity-logs', ActivityLogController::class)
+        ->only(['index', 'show']);
 });
 
 Route::prefix('users')
     ->name('Users.')
     ->controller(UserController::class)
-    ->middleware(['auth', ' verified'])
+    ->middleware(['auth','verified'])
     ->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/create', 'create')->name('create');
@@ -105,6 +108,10 @@ Route::prefix('shipment-documents')
     ->controller(ShipmentDocumentController::class)
     ->middleware(['auth', 'verified'])
     ->group(function () {
+        Route::get('/create', 'create')->name('create');
+        Route::get('/{shipment-documents}/edit', 'edit')
+            ->whereNumber('shipment-documents')
+            ->name('edit');
         Route::get('/', 'index')->name('index');
         Route::get('/{shipment_document}', 'show')
             ->whereNumber('shipment_document')
@@ -269,4 +276,33 @@ Route::prefix('tracking-status')
         Route::put('/{tracking_status}', 'update')->name('update');
         Route::delete('/{tracking_status}', 'destroy')->name('destroy');
     });
+
+Route::prefix('customs-clearance')
+    ->name('customs-clearance.')
+    ->controller(CustomsClearancesController::class)
+    ->middleware(['auth', 'verified'])
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/{shipment}', 'show')
+            ->whereNumber('shipment')
+            ->name('show');
+        Route::put('/{shipment}', 'update')
+            ->whereNumber('shipment')
+            ->name('update');
+        Route::post('/{customsClearance}/responses', [CustomsClearanceResponsesController::class, 'store'])
+            ->whereNumber('customsClearance')
+            ->name('responses.store');
+    });
+
+Route::prefix('customs-clearance-response')
+    ->name('customs-clearance-response.')
+    ->controller(CustomsClearanceResponsesController::class)
+    ->middleware(['auth', 'verified'])
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/{response}', 'show')
+            ->whereNumber('response')
+            ->name('show');
+    });
+
 require __DIR__.'/settings.php';

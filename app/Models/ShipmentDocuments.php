@@ -15,9 +15,6 @@ class ShipmentDocuments extends Model
         'document_date',
         'document_file',
         'verification_status',
-        'verification_notes',
-        'verified_at',
-        'verified_by',
     ];
 
     protected function casts(): array

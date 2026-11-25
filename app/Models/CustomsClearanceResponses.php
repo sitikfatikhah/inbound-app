@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class CustomsClearanceResponses extends Model
 {
     protected $fillable = [
-        'shipment_id',
         'customs_clearance_id',
         'customs_response_type_id',
         'document_number',
@@ -26,8 +25,13 @@ class CustomsClearanceResponses extends Model
     public function customsClearance(): BelongsTo
     {
         return $this->belongsTo(
-            CustomsClearance::class,
+            CustomsClearances::class,
             'customs_clearance_id'
         );
+    }
+
+    public function responseType(): BelongsTo
+    {
+        return $this->belongsTo(CustomsResponseType::class, 'customs_response_type_id');
     }
 }

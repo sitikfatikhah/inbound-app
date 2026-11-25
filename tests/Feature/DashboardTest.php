@@ -17,6 +17,7 @@ test('authenticated users can visit the dashboard', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->component('Dashboard')
             ->has('stats')
+            ->where('stats.pendingClearance', 0)
             ->has('timeline', 7)
             ->has('statusBreakdown')
             ->has('exceptions'));
