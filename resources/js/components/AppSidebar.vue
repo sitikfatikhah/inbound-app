@@ -27,7 +27,7 @@ const mainNavItems: NavItem[] = [
     
     {
         title: 'KN',
-        href: '/knowledge-mgm',
+        href: 'knowledge-mgm',
         icon: BookOpen,
     },
 ];
@@ -134,18 +134,13 @@ const trackingItems: NavItem[] = [
 
 const monitoringItems: NavItem[] = [
     {
-        title: 'Analytics',
-        href: '/analytics',
-        icon: ChartNoAxesCombinedIcon,
-    },
-    {
         title: 'Performance',
         href: '/analytics',
         icon: ChartNetwork,
     },
     {
         title: 'New Project Monitoring',
-        href: '/project',
+        href: '/tracking/project',
         icon: FolderKanban,
     },
 ];

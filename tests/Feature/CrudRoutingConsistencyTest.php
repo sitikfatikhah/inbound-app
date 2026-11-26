@@ -5,6 +5,7 @@ use App\Http\Requests\ShippingLineRequest;
 use App\Http\Requests\SupplierRequest;
 use App\Models\Forwarders;
 use App\Models\User;
+use Database\Seeders\PermissionsSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
 
 it('registers the core CRUD routes for authenticated users', function () {
@@ -19,7 +20,10 @@ it('registers the core CRUD routes for authenticated users', function () {
 });
 
 it('passes the selected forwarder to the edit page', function () {
+    $this->seed(PermissionsSeeder::class);
+
     $user = User::factory()->create();
+    $user->givePermissionTo('forwarder.update');
     $forwarder = Forwarders::create([
         'forwarder_name' => 'Test Forwarder',
         'contact_person' => 'Test Contact',

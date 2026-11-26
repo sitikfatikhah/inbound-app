@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import { computed } from 'vue'
 import { router, Link } from '@inertiajs/vue3'
@@ -83,7 +82,7 @@ function formatDate(value: string | null): string {
 </script>
 
 <template>
-    <div class="space-y-6">
+    <div class="space-y-6 p-4">
         <!-- Page Header -->
         <div class="flex flex-col justify-between gap-4 sm:flex-row">
             <div>

@@ -19,22 +19,21 @@ class DatabaseSeeder extends Seeder
         // User::factory(10)->create();
 
         $admin = User::updateOrCreate(
-            ['email' => 'test@example.com'],
+            ['email' => 'admin@test.com'],
             [
                 'name' => 'Admin',
-                'email' => 'admin@test.com',
                 'email_verified_at' => now(),
                 'password' => bcrypt('password'),
                 'remember_token' => Str::random(10),
             ]
-           
+
         );
-        
-        $admin->assignRole('Superadmin');
 
         $this->call([
             PermissionsSeeder::class,
         ]);
+
+        $admin->syncRoles(['Super Admin']);
 
         $this->call([
             TrackingStatusSeeder::class,

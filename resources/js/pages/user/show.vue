@@ -34,7 +34,7 @@ const formatDateTime = (value: string | null): string => {
 </script>
 
 <template>
-    <div class="w-full max-w-6xl space-y-6 px-4">
+    <div class="w-full p-4">
         <!-- Header -->
         <div>
             <Link

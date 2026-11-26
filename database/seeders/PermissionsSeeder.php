@@ -29,18 +29,79 @@ class PermissionsSeeder extends Seeder
             'purchase-order.update',
             'purchase-order.delete',
 
+            'custom-clearances.view',
+            'custom-clearances.create',
+            'custom-clearances.update',
+            'custom-clearances.delete',
+
+            'containers.view',
+            'containers.create',
+            'containers.update',
+            'containers.delete',
+
+            'payment.view',
+            'payment.create',
+            'payment.update',
+            'payment.delete',
+
             'shipment.view',
             'shipment.create',
             'shipment.update',
             'shipment.delete',
 
+            'shipment-document.view',
+            'shipment-document.create',
+            'shipment-document.update',
+            'shipment-document.delete',
+
+            'local-shipment.view',
+            'local-shipment.create',
+            'local-shipment.update',
+            'local-shipment.delete',
+
+            'shipment.customs-clearance.update',
+            'shipment.schedule-revision.create',
+
             'customs-clearance.view',
             'customs-clearance.create',
             'customs-clearance.update',
 
+            'customs-clearance-response.view',
+            'customs-clearance-response.create',
+
             'warehouse-receiving.view',
             'warehouse-receiving.create',
             'warehouse-receiving.update',
+
+            'port.view',
+            'port.create',
+            'port.update',
+            'port.delete',
+
+            'warehouse.view',
+            'warehouse.create',
+            'warehouse.update',
+            'warehouse.delete',
+
+            'shipping-line.view',
+            'shipping-line.create',
+            'shipping-line.update',
+            'shipping-line.delete',
+
+            'product.view',
+            'product.create',
+            'product.update',
+            'product.delete',
+
+            'supplier.view',
+            'supplier.create',
+            'supplier.update',
+            'supplier.delete',
+
+            'tracking-status.view',
+            'tracking-status.create',
+            'tracking-status.update',
+            'tracking-status.delete',
 
             'master-data.view',
             'master-data.create',
@@ -64,6 +125,7 @@ class PermissionsSeeder extends Seeder
             'settings.update',
 
             'activity-log.view',
+            'activity-logs.view',
 
             'roles.view',
             'roles.create',
@@ -78,7 +140,6 @@ class PermissionsSeeder extends Seeder
             ]);
         }
 
-        
         /*
         |--------------------------------------------------------------------------
         | Super Admin

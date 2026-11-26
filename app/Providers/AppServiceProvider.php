@@ -87,16 +87,14 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
-    
     public function boot(): void
     {
         $this->configureDefaults();
 
         Gate::before(function ($user, $ability) {
-            return $user->hasRole('Superadmin') ? true : null;
+            return $user->hasRole('Super Admin') ? true : null;
         });
     }
-
 
     /**
      * Configure default behaviors for production-ready applications.

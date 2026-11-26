@@ -46,7 +46,7 @@ function submit() {
 </script>
 
 <template>
-    <div class="space-y-6">
+    <div class="space-y-6 p-4">
         <div>
             <h1 class="text-2xl font-semibold">Edit Role</h1>
             <p class="text-muted-foreground">

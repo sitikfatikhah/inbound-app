@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { Link } from '@inertiajs/vue3'
+import { Link, useForm } from '@inertiajs/vue3'
+import { Upload } from 'lucide-vue-next'
 import { create, edit as editShipment, show as showShipment } from '@/actions/App/Http/Controllers/ShipmentController'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -49,6 +50,31 @@ const props = defineProps<{
     notifications?: Notification[]
 }>()
 const search = ref('')
+const fileInput = ref<HTMLInputElement | null>(null)
+const importForm = useForm({
+    file: null as File | null,
+})
+
+const openImportDialog = () => {
+    fileInput.value?.click()
+}
+
+const handleImportFile = (event: Event) => {
+    const input = event.target as HTMLInputElement
+    const file = input.files?.[0]
+
+    if (!file) return
+
+    importForm.file = file
+    importForm.post('/shipments/import', {
+        forceFormData: true,
+        onFinish: () => {
+            input.value = ''
+            importForm.reset()
+        },
+    })
+}
+
 const filteredShipments = computed(() => {
     const keyword = search.value.trim().toLowerCase()
     if (!keyword) return props.shipments ?? []
@@ -61,14 +87,38 @@ const statusClass = (value: string | null) => { const status = value?.toLowerCas
 
 <template>
     <div class="mx-auto w-full space-y-6 p-4 sm:p-8">
-        <div class="flex flex-wrap items-center justify-between gap-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
             <div>
                 <h1 class="text-2xl font-semibold">Shipments</h1>
                 <p class="text-sm text-muted-foreground">Inbound tracking, documents, customs clearance, and schedule performance.</p>
             </div>
-            <Button as-child>
+            <div class="flex flex-col-4 gap-2">
+                <Button as-child>
                 <Link :href="create.url()">Add Shipment</Link>
             </Button>
+            <!-- Hidden file input -->
+            <input
+                ref="fileInput"
+                type="file"
+                accept=".csv"
+                class="hidden"
+                @change="handleImportFile"
+            />
+
+            <!-- Import button -->
+            <Button
+                variant="outline"
+                :disabled="importForm.processing"
+                @click="openImportDialog"
+            >
+                <Upload class="mr-2 h-4 w-4" />
+
+                {{ importForm.processing
+                    ? 'Importing...'
+                    : 'Import CSV'
+                }}
+            </Button>
+            </div>
         </div>
         <section v-if="props.insights" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <article class="rounded-lg border bg-card p-4">
