@@ -27,7 +27,10 @@ class DatabaseSeeder extends Seeder
                 'password' => bcrypt('password'),
                 'remember_token' => Str::random(10),
             ]
+           
         );
+        
+        $admin->assignRole('Superadmin');
 
         $this->call([
             PermissionsSeeder::class,

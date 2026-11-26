@@ -16,13 +16,19 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
-import { Box, ChartNoAxesCombinedIcon, Form, HatGlasses, MessageSquareDot } from 'lucide-vue-next';
+import { BookOpenTextIcon, Box, ChartNetwork, ChartNoAxesCombinedIcon, Form, HatGlasses, MessageSquareDot, Shield, UserRoundKey } from 'lucide-vue-next';
 
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
         href: dashboard(),
         icon: LayoutGrid,
+    },
+    
+    {
+        title: 'KN',
+        href: '/knowledge-mgm',
+        icon: BookOpen,
     },
 ];
 
@@ -57,11 +63,7 @@ const masterDataItems: NavItem[] = [
         href: '/suppliers',
         icon: Users,
     },
-    {
-        title: 'Status',
-        href: '/tracking-status',
-        icon: MessageSquareDot,
-    },
+    
 ];
 
 const transactionItems: NavItem[] = [
@@ -102,8 +104,13 @@ const transactionItems: NavItem[] = [
 const userManagementItems: NavItem[] = [
     {
         title: 'User',
-        href: '/users',
+        href: '/user',
         icon: UserRound,
+    },
+    {
+        title: 'Role',
+        href: '/roles',
+        icon: Shield,
     },
 ];
 
@@ -132,14 +139,14 @@ const monitoringItems: NavItem[] = [
         icon: ChartNoAxesCombinedIcon,
     },
     {
+        title: 'Performance',
+        href: '/analytics',
+        icon: ChartNetwork,
+    },
+    {
         title: 'New Project Monitoring',
         href: '/project',
         icon: FolderKanban,
-    },
-    {
-        title: 'Knowledge Management',
-        href: '/knowledge-mgm',
-        icon: BookOpen,
     },
 ];
 

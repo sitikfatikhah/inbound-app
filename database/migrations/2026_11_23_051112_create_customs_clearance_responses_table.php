@@ -22,7 +22,7 @@ return new class extends Migration
             $table->text('remarks')->nullable();
             $table->timestamps();
 
-            $table->index(['customs_clearance_id', 'response_date']);
+            $table->index(['customs_clearance_id', 'response_date'],'ccr_clearance_date_idx');
         });
     }
 

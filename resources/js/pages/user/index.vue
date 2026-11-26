@@ -1,8 +1,11 @@
-```vue
+
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { Link } from '@inertiajs/vue3';
-import { MoreHorizontal, Users as UsersIcon } from 'lucide-vue-next';
+import {
+    MoreHorizontal,
+    Users as UsersIcon,
+} from 'lucide-vue-next';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,20 +27,37 @@ import {
     TableRow,
 } from '@/components/ui/table';
 
+
 interface User {
     id: number;
     name: string;
     email: string;
     email_verified_at: string | null;
+    roles: string[];
+}
+
+interface PaginationLink {
+    url: string | null;
+    label: string;
+    active: boolean;
+}
+
+interface UserPagination {
+    data: User[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    links: PaginationLink[];
 }
 
 const props = defineProps<{
-    users?: User[];
+    users: UserPagination;
 }>();
 
 const search = ref('');
 
-const userList = computed(() => props.users ?? []);
+const userList = computed(() => props.users.data ?? []);
 
 const filteredUsers = computed(() => {
     const keyword = search.value.trim().toLowerCase();
@@ -47,13 +67,21 @@ const filteredUsers = computed(() => {
     }
 
     return userList.value.filter((user) => {
-        return [user.name, user.email, user.email_verified_at].some((value) =>
+        const searchableValues = [
+            user.name,
+            user.email,
+            user.email_verified_at,
+            ...(user.roles ?? []),
+        ];
+
+        return searchableValues.some((value) =>
             String(value ?? '')
                 .toLowerCase()
                 .includes(keyword),
         );
     });
 });
+
 </script>
 
 <template>
@@ -64,7 +92,9 @@ const filteredUsers = computed(() => {
                 <div class="flex items-center gap-2">
                     <UsersIcon class="h-6 w-6" />
 
-                    <h1 class="text-2xl font-semibold">Users</h1>
+                    <h1 class="text-2xl font-semibold">
+                        Users
+                    </h1>
                 </div>
 
                 <p class="text-sm text-muted-foreground">
@@ -73,7 +103,9 @@ const filteredUsers = computed(() => {
             </div>
 
             <Button as-child>
-                <Link href="/users/create"> Add User </Link>
+                <Link href="/user/create">
+                    Add User
+                </Link>
             </Button>
         </div>
 
@@ -90,18 +122,32 @@ const filteredUsers = computed(() => {
         <!-- Table -->
         <div class="rounded-md border">
             <Table>
-                <TableCaption> A list of your users. </TableCaption>
+                <TableCaption>
+                    A list of your users.
+                </TableCaption>
 
-                <!-- TABLE HEADER -->
+                <!-- Table Header -->
                 <TableHeader>
                     <TableRow>
-                        <TableHead class="w-[70px]"> No. </TableHead>
+                        <TableHead class="w-[70px]">
+                            No.
+                        </TableHead>
 
-                        <TableHead> Name </TableHead>
+                        <TableHead>
+                            Name
+                        </TableHead>
 
-                        <TableHead> Email </TableHead>
+                        <TableHead>
+                            Email
+                        </TableHead>
 
-                        <TableHead> Email Verified At </TableHead>
+                        <TableHead>
+                            Roles
+                        </TableHead>
+
+                        <TableHead>
+                            Email Verified At
+                        </TableHead>
 
                         <TableHead class="w-[80px] text-right">
                             Actions
@@ -110,34 +156,66 @@ const filteredUsers = computed(() => {
                 </TableHeader>
 
                 <TableBody>
-                    <!-- ADA DATA -->
+                    <!-- Data Available -->
                     <template v-if="filteredUsers.length > 0">
                         <TableRow
                             v-for="(user, index) in filteredUsers"
                             :key="user.id"
                         >
-                            <!-- No -->
+                            <!-- Number -->
                             <TableCell>
                                 {{ index + 1 }}
                             </TableCell>
 
+                            <!-- Name -->
                             <TableCell class="font-medium">
                                 {{ user.name }}
                             </TableCell>
 
+                            <!-- Email -->
                             <TableCell>
                                 {{ user.email }}
                             </TableCell>
 
+                            <!-- Roles -->
+                            <TableCell>
+                                <div
+                                    v-if="user.roles?.length"
+                                    class="flex flex-wrap gap-1"
+                                >
+                                    <span
+                                        v-for="role in user.roles"
+                                        :key="role"
+                                        class="rounded-md border px-2 py-1 text-xs font-medium"
+                                    >
+                                        {{ role }}
+                                    </span>
+                                </div>
+
+                                <span
+                                    v-else
+                                    class="text-sm text-muted-foreground"
+                                >
+                                    No role
+                                </span>
+                            </TableCell>
+
+                            <!-- Email Verification -->
                             <TableCell>
                                 {{ user.email_verified_at || '-' }}
                             </TableCell>
 
+                            <!-- Actions -->
                             <TableCell class="text-right">
                                 <DropdownMenu>
                                     <DropdownMenuTrigger as-child>
-                                        <Button variant="ghost" size="icon">
-                                            <MoreHorizontal class="h-4 w-4" />
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                        >
+                                            <MoreHorizontal
+                                                class="h-4 w-4"
+                                            />
                                         </Button>
                                     </DropdownMenuTrigger>
 
@@ -148,30 +226,36 @@ const filteredUsers = computed(() => {
 
                                         <DropdownMenuSeparator />
 
+                                        <!-- View -->
                                         <DropdownMenuItem as-child>
                                             <Link
-                                                :href="`/users/${user.id}`"
+                                                :href="`/user/${user.id}`"
                                                 class="w-full"
                                             >
                                                 View
                                             </Link>
                                         </DropdownMenuItem>
 
+                                        <!-- Edit -->
                                         <DropdownMenuItem as-child>
                                             <Link
-                                                :href="`/users/${user.id}/edit`"
+                                                :href="`/user/${user.id}/edit`"
                                                 class="w-full"
                                             >
                                                 Edit
                                             </Link>
                                         </DropdownMenuItem>
 
+                                        <!-- Delete -->
                                         <DropdownMenuItem as-child>
                                             <Link
-                                                :href="`/users/${user.id}`"
+                                                :href="`/user/${user.id}`"
                                                 method="delete"
                                                 as="button"
                                                 class="w-full text-left text-destructive"
+                                                :onBefore="() => window.confirm(
+                                                    `Are you sure you want to delete ${user.name}?`
+                                                )"
                                             >
                                                 Delete
                                             </Link>
@@ -182,9 +266,12 @@ const filteredUsers = computed(() => {
                         </TableRow>
                     </template>
 
-                    <!-- DATA KOSONG -->
+                    <!-- Empty Data -->
                     <TableRow v-else>
-                        <TableCell :colspan="5" class="h-32 text-center">
+                        <TableCell
+                            :colspan="6"
+                            class="h-32 text-center"
+                        >
                             <div
                                 class="flex flex-col items-center justify-center gap-2"
                             >
@@ -212,4 +299,3 @@ const filteredUsers = computed(() => {
         </div>
     </div>
 </template>
-```

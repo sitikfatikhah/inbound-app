@@ -18,6 +18,7 @@ return new class extends Migration
             $table->text('content');
             $table->string('category')->nullable();
             $table->string('author')->nullable();
+            $table->string('source_url')->nullable()->after('content');
             $table->boolean('is_published')->default(false);
             $table->timestamps();
         });

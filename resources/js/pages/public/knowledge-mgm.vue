@@ -23,6 +23,7 @@ interface Article {
     content: string;
     category: string | null;
     author: string | null;
+    source_url: string | null;
     is_published: boolean;
 }
 const props = defineProps<{ articles?: Article[] }>();

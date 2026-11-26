@@ -12,6 +12,7 @@ class KnowledgeArticles extends Model
         'content',
         'category',
         'author',
+        'source_url'
         'is_published',
     ];
 }
